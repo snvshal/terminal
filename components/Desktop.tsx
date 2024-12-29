@@ -1,6 +1,11 @@
-import React from 'react'
+import React from "react"
 
-const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface DesktopProps {
+  children: React.ReactNode
+  openNotepad: (filename: string) => void
+}
+
+const Desktop: React.FC<DesktopProps> = ({ children }) => {
   return (
     <div className="h-screen w-screen bg-gray-900 text-gray-200 overflow-hidden relative">
       {children}
@@ -9,4 +14,3 @@ const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 }
 
 export default Desktop
-
