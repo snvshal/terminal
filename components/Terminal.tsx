@@ -133,3 +133,4 @@ const Terminal: React.FC<TerminalProps> = ({
 }
 
 export default Terminal
+

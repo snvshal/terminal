@@ -29,7 +29,7 @@ function HomeContent() {
   }
 
   const openNotepad = (filename: string) => {
-    const id = `notepad-${filename}`
+    const id = `notepad-${filename}-${Date.now()}`
     setOpenWindows((prevWindows) => [
       ...prevWindows,
       {
@@ -89,3 +89,4 @@ export default function Home() {
     </FileSystemProvider>
   )
 }
+
