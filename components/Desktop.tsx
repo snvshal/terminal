@@ -1,8 +1,12 @@
 import React from 'react'
 
-const Desktop: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface DesktopProps {
+  children: React.ReactNode
+}
+
+const Desktop: React.FC<DesktopProps> = ({ children }) => {
   return (
-    <div className="h-screen w-screen bg-gray-900 text-gray-200 overflow-hidden relative">
+    <div className="h-screen w-screen bg-zinc-950 text-zinc-200 overflow-hidden relative">
       {children}
     </div>
   )
