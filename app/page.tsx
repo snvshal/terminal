@@ -70,13 +70,9 @@ function HomeContent() {
   ])
 
   return (
-    <Desktop openNotepad={openNotepad}>
+    <Desktop>
       {openWindows.map(({ id, component }) => (
-        <div key={id}>
-          {React.cloneElement(component as React.ReactElement, {
-            onClose: () => closeWindow(id),
-          })}
-        </div>
+        <div key={id}>{component}</div>
       ))}
     </Desktop>
   )
@@ -89,4 +85,3 @@ export default function Home() {
     </FileSystemProvider>
   )
 }
-
