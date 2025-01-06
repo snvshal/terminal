@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react"
 
 interface DesktopProps {
   children: React.ReactNode
@@ -13,4 +13,3 @@ const Desktop: React.FC<DesktopProps> = ({ children }) => {
 }
 
 export default Desktop
-
