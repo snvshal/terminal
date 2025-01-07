@@ -3,7 +3,7 @@ import { FileSystemContext } from "../contexts/FileSystemContext"
 import Window from "./Window"
 import { updateFileContent as updateFileContentAction } from "@/app/actions"
 
-interface TerminalProps {
+export type TerminalProps = {
   initialPosition: { x: number; y: number }
   onClose: () => void
 }
@@ -164,7 +164,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
   return (
     <Window
-      title={`Terminal${currentUser ? ` - ${currentUser}` : ""}`}
+      title={"Terminal"}
       onClose={onClose}
       initialPosition={initialPosition}
     >

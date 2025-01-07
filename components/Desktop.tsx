@@ -1,6 +1,6 @@
 import React from "react"
 
-interface DesktopProps {
+export type DesktopProps = {
   children: React.ReactNode
 }
 

@@ -1,11 +1,14 @@
+import { Circle } from "lucide-react"
 import React, { useState, useEffect, useRef } from "react"
 
-interface WindowProps {
+export type WindowProps = {
   title: string
   children: React.ReactNode
   onClose: () => void
   initialPosition: { x: number; y: number }
 }
+
+export const windowInitialSize = { width: 600, height: 400 }
 
 const Window: React.FC<WindowProps> = ({
   title,
@@ -14,7 +17,7 @@ const Window: React.FC<WindowProps> = ({
   initialPosition,
 }) => {
   const [position, setPosition] = useState(initialPosition)
-  const [size, setSize] = useState({ width: 600, height: 300 })
+  const [size, setSize] = useState(windowInitialSize)
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
@@ -86,27 +89,30 @@ const Window: React.FC<WindowProps> = ({
   return (
     <div
       ref={windowRef}
-      className="absolute bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg overflow-hidden"
+      className="absolute bg-zinc-900 border border-zinc-700 rounded-xl shadow-lg overflow-hidden"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: `${size.width < 400 ? 400 : size.width}px`,
-        height: `${size.height < 400 ? 400 : size.height}px`,
+        height: `${size.height < 250 ? 250 : size.height}px`,
       }}
     >
       <div
         className="bg-zinc-800 px-4 py-2 flex justify-between items-center cursor-grab active:cursor-grabbing"
         onMouseDown={(e) => handleMouseDown(e, "drag")}
       >
-        <span className="text-zinc-200 font-semibold">{title}</span>
-        <div className="flex space-x-2">
-          <button className="w-3 h-3 rounded-full bg-green-500 focus:outline-none hover:bg-green-600" />
-          <button className="w-3 h-3 rounded-full bg-yellow-500 focus:outline-none hover:bg-yellow-600" />
+        <div className="flex space-x-2.5">
           <button
             onClick={onClose}
             className="w-3 h-3 rounded-full bg-red-500 focus:outline-none hover:bg-red-600"
           />
+          <button className="w-3 h-3 rounded-full bg-yellow-500 focus:outline-none hover:bg-yellow-600" />
+          <button className="w-3 h-3 rounded-full bg-green-500 focus:outline-none hover:bg-green-600" />
         </div>
+        <span className="text-zinc-200 font-semibold">{title}</span>
+        <span className="w-14 flex justify-end">
+          {/* <Circle className="size-4" /> */}
+        </span>
       </div>
       <div className="h-[calc(100%-2.5rem)] overflow-auto">{children}</div>
       <div

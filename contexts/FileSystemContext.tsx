@@ -14,7 +14,7 @@ import {
   renameFileOrDirectory as renameFileOrDirectoryAction,
 } from "../app/actions"
 
-export interface FileSystemContextType {
+export type FileSystemContextType = {
   currentDirectory: string
   executeCommand: (command: string) => Promise<string[]>
   getFullPath: (filename: string) => string
@@ -328,7 +328,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       ["touch [file]", "Create a new file"],
       ["open [file]", "Display file or url content"],
       ["edit [file]", "Edit file content"],
-      ["seturl [file] [url]", "Set URL content for a file"],
+      ["seturl [file] [url]", "Set and update URL content for a file"],
       ["rm [file]", "Remove a file or url"],
       ["mv [file/directory] [destination]", "Move a file or directory"],
       ["rename [old name] [new name]", "Rename a file or directory or url"],
