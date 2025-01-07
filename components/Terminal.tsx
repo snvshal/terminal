@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState, useRef, useEffect, useContext } from "react"
 import { FileSystemContext } from "../contexts/FileSystemContext"
 import Window from "./Window"

@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import Desktop from "../components/Desktop"
 import { FileSystemProvider } from "../contexts/FileSystemContext"
@@ -14,13 +14,13 @@ export type WindowProps = {
 }
 
 function HomeContent() {
-  const [openWindows, setOpenWindows] = React.useState<WindowProps[]>([])
-  const [windowCenter, setWindowCenter] = React.useState<{
+  const [openWindows, setOpenWindows] = useState<WindowProps[]>([])
+  const [windowCenter, setWindowCenter] = useState<{
     x: number
     y: number
   } | null>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const calculateCenter = () => {
       const x = (window.innerWidth - windowInitialSize.width) / 2
       const y = (window.innerHeight - windowInitialSize.height) / 2
@@ -39,7 +39,7 @@ function HomeContent() {
     )
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (windowCenter) {
       setOpenWindows([
         {
@@ -55,11 +55,33 @@ function HomeContent() {
     }
   }, [windowCenter])
 
+  const handleDoubleClick = () => {
+    console.log("✨ Double clicked ✨")
+    setOpenWindows([
+      {
+        id: "terminal",
+        component: (
+          <Terminal
+            initialPosition={windowCenter!}
+            onClose={() => closeWindow("terminal")}
+          />
+        ),
+      },
+    ])
+  }
+
   return (
     <Desktop>
       {openWindows.map(({ id, component }) => (
         <div key={id}>{component}</div>
       ))}
+      {!openWindows.length && (
+        <div className="h-screen w-full flex items-center text-muted-foreground justify-center">
+          <button onDoubleClick={handleDoubleClick} className="text-gray-500">
+            Double Click
+          </button>
+        </div>
+      )}
     </Desktop>
   )
 }

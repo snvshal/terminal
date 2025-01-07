@@ -1,3 +1,5 @@
+"use client"
+
 import React, { createContext, useContext, useState } from "react"
 import {
   searchUser as searchUserAction,
@@ -66,7 +68,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
   const [searching, setSearching] = useState<string | null>(null)
 
   const executeCommand = async (command: string): Promise<string[]> => {
-    const [cmd, ...args] = command.split(" ").filter(Boolean)
+    const [cmd, ...args] = command
+      .toLocaleLowerCase()
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
 
     switch (cmd) {
       case "ls":
