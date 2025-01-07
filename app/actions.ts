@@ -141,7 +141,7 @@ export const createNode = async (
     const existingItem = await findNodeByPath(user.about, location, name, "any")
 
     if (existingItem) {
-      return `A ${type} with the name ${name} already exists in this location`
+      return `Error: A ${type} with the name '${name}' already exists in this location`
     }
 
     const now = new Date()
@@ -163,7 +163,7 @@ export const createNode = async (
     return `${type.charAt(0).toUpperCase() + type.slice(1)} created: ${name}`
   } catch (error) {
     console.error("Error during creating", type, ":", error)
-    return `An error occurred while creating the ${type}`
+    return `Error: An error occurred while creating the ${type}`
   }
 }
 
@@ -205,7 +205,7 @@ export const listDirectory = async (
     return output
   } catch (error) {
     console.error("Error in listDirectory:", error)
-    return ["An error occurred while listing the directory"]
+    return ["Error: An error occurred while listing the directory"]
   }
 }
 
@@ -225,7 +225,7 @@ export const changeDirectory = async (
       "directory"
     )
 
-    if (!dir) return { success: false, content: "Directory not found" }
+    if (!dir) return { success: false, content: "Error: Directory not found" }
 
     return { success: true, content: `${currentPath}/${newPath}` }
   } catch (error) {
@@ -250,16 +250,16 @@ export const readFileContent = async (
     const file = await findNodeByPath(user.about, location, filename, "file")
     const url = await findNodeByPath(user.about, location, filename, "url")
 
-    if (!file && !url) return "File not found"
+    if (!file && !url) return "Error: File not found"
 
     if (file) {
       return `Content of ${file.name}:\n${(file as FileItem).content}`
     }
 
-    return `Url of ${url?.name}: fileurl://${(url as UrlItem).url}`
+    return `URL of ${url?.name}: fileurl://${(url as UrlItem).url}`
   } catch (error) {
     console.error("Error in readFileContent:", error)
-    return "An error occurred while reading file content"
+    return "Error: An error occurred while reading file content"
   }
 }
 
@@ -273,7 +273,7 @@ export const editFileContent = async (
     if (!user) return { success: false, content: "Error: User not found" }
 
     const file = await findNodeByPath(user.about, location, filename, "file")
-    if (!file) return { success: false, content: "File not found" }
+    if (!file) return { success: false, content: "Error: File not found" }
 
     return {
       success: true,
@@ -283,7 +283,7 @@ export const editFileContent = async (
     console.error("Error in editFileContent:", error)
     return {
       success: false,
-      content: "An error occurred while preparing to edit file content",
+      content: "Error: An error occurred while preparing to edit file content",
     }
   }
 }
@@ -300,7 +300,7 @@ export const updateFileContent = async (
 
     const file = await findNodeByPath(user.about, location, filename, "file")
 
-    if (!file) return "File not found"
+    if (!file) return "Error: File not found"
 
     user.about.files = user.about.files.map((f) =>
       f.location === location && f.name === filename
@@ -313,7 +313,7 @@ export const updateFileContent = async (
     return "File content updated successfully"
   } catch (error) {
     console.error("Error in updateFileContent:", error)
-    return "An error occurred while updating file content"
+    return "Error: An error occurred while updating file content"
   }
 }
 
@@ -327,14 +327,19 @@ export const setFileUrl = async (
     const user = await getUserByUsername(username)
     if (!user) return "Error: User not found"
 
-    const node = await findNodeByPath(user.about, location, filename, "any")
+    const urlItem = await findNodeByPath(user.about, location, filename, "url")
 
-    if (node) {
+    if (urlItem) {
       user.about.urls = user.about.urls.map((u) =>
         u.location === location && u.name === filename ? { ...u, url } : u
       )
       await user.save()
-      return "File URL updated successfully"
+      return `${filename} (URL) updated successfully`
+    }
+
+    const node = await findNodeByPath(user.about, location, filename, "any")
+    if (node) {
+      return `Error: An item with the name '${filename}' already exist in current directory`
     }
 
     const newUrlItem: UrlItem = {
@@ -348,10 +353,10 @@ export const setFileUrl = async (
     user.about.urls.push(newUrlItem)
     await user.save()
 
-    return "File URL created successfully"
+    return `${filename} (URL) created successfully`
   } catch (error) {
     console.error("Error in setFileUrl:", error)
-    return "An error occurred while setting file URL"
+    return "Error: An error occurred while setting file URL"
   }
 }
 
@@ -365,36 +370,31 @@ export const removeNode = async (
     const user = await getUserByUsername(username)
     if (!user) return "Error: User not found"
 
-    const node = await findNodeByPath(user.about, location, name, type)
-    if (!node)
-      return `${type.charAt(0).toUpperCase() + type.slice(1)} not found`
+    const node = await findNodeByPath(user.about, location, name, "any")
+    if (!node) return `Error: '${name}' not found`
+
+    const removeItem = (collection: FileSystemNode[]) =>
+      collection.filter(
+        (item) => !(item.name === name && item.location === location)
+      )
 
     if (type === "file") {
-      user.about.files = user.about.files.filter(
-        (f) => f.name !== name && f.location !== location
-      )
-      user.about.urls = user.about.urls.filter(
-        (u) => u.name !== name && u.location !== location
-      )
+      user.about.files = removeItem(user.about.files) as FileItem[]
+      user.about.urls = removeItem(user.about.urls) as UrlItem[]
     } else if (type === "directory") {
+      const sm = (items: FileSystemNode[]) =>
+        items.some((item) => item.location.startsWith(`${location}/${name}`))
+
       const hasChildren =
-        user.about.directories.some((d) =>
-          d.location.startsWith(`${location}/${name}/`)
-        ) ||
-        user.about.files.some((f) =>
-          f.location.startsWith(`${location}/${name}/`)
-        ) ||
-        user.about.urls.some((u) =>
-          u.location.startsWith(`${location}/${name}/`)
-        )
+        sm(user.about.directories) ||
+        sm(user.about.files) ||
+        sm(user.about.urls)
 
-      if (hasChildren) {
-        return "Error: Directory is not empty"
-      }
+      if (hasChildren) return "Error: Directory is not empty"
 
-      user.about.directories = user.about.directories.filter(
-        (d) => d.name !== name && d.location !== location
-      )
+      user.about.directories = removeItem(
+        user.about.directories
+      ) as DirectoryItem[]
     }
 
     await user.save()
@@ -402,7 +402,7 @@ export const removeNode = async (
     return `${type.charAt(0).toUpperCase() + type.slice(1)} removed: ${name}`
   } catch (error) {
     console.error(`Error in remove ${type}:`, error)
-    return `An error occurred while deleting ${type}`
+    return `Error: An error occurred while deleting ${type}`
   }
 }
 
@@ -467,7 +467,65 @@ export const renameFileOrDirectory = async (
     return "Item renamed successfully"
   } catch (error) {
     console.error(`Error in renaming ${oldName}:`, error)
-    return `An error occurred while renaming ${oldName}`
+    return `Error: An error occurred while renaming ${oldName}`
+  }
+}
+
+export const moveFileOrDirectory = async (
+  username: string,
+  location: string,
+  name: string,
+  destination: string
+): Promise<string> => {
+  try {
+    const user = await getUserByUsername(username)
+    if (!user) return "Error: User not found"
+
+    const sourceNode = await findNodeByPath(user.about, location, name, "any")
+    if (!sourceNode) return `Error: ${name} not found in the current directory`
+
+    const destinationNode = await findNodeByPath(
+      user.about,
+      location,
+      destination,
+      "directory"
+    )
+    if (!destinationNode) return "Error: Destination not found"
+
+    const existingItem = await findNodeByPath(
+      user.about,
+      destination,
+      name,
+      "any"
+    )
+
+    if (existingItem) {
+      return `Error: An item with name ${name} already exists in the ${destination}`
+    }
+
+    // CHANGE THE LOCATION OF SOURCE ITEM
+    user.about.directories = user.about.directories.map((d) =>
+      d.name === name && d.location === destination
+        ? { ...d, location: destination }
+        : d
+    )
+    user.about.files = user.about.files.map((f) =>
+      f.name === name && f.location === destination
+        ? { ...f, location: destination }
+        : f
+    )
+    user.about.urls = user.about.urls.map((u) =>
+      u.name === name && u.location === destination
+        ? { ...u, location: destination }
+        : u
+    )
+
+    await user.save()
+
+    return `The item ${name} has been moved to the ${destination}`
+  } catch (error) {
+    console.error(`Error in moving file/directory:`, error)
+    return "Error: An error occurred while moving file/directory"
   }
 }
 

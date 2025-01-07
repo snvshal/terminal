@@ -10,6 +10,7 @@ import {
   editFileContent as editFileContentAction,
   setFileUrl as setFileUrlAction,
   removeNode as removeNodeAction,
+  moveFileOrDirectory as moveFileOrDirectoryAction,
   renameFileOrDirectory as renameFileOrDirectoryAction,
 } from "../app/actions"
 
@@ -86,8 +87,8 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
         return [await removeFile(args[0])]
       case "pwd":
         return [printWorkingDirectory()]
-      // case "mv":
-      //   return [await moveFileOrDirectory(args[0], args[1])]
+      case "mv":
+        return [await moveFileOrDirectory(args[0], args[1])]
       case "rename":
         return [await renameFileOrDirectory(args[0], args[1])]
       case "clear":
@@ -281,6 +282,35 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     return currentDirectory
   }
 
+  const moveFileOrDirectory = async (
+    name: string,
+    destination: string
+  ): Promise<string> => {
+    if (!currentUser) return "Signin to move file/directory"
+    if (!name || !destination)
+      return "Error: Source and destination must be specified"
+
+    if (name === destination) {
+      return "Error: Destination path cannot be the source path"
+    }
+
+    const destinationPath = destination.startsWith("/")
+      ? destination
+      : `${currentDirectory}/${destination}`.replace(/\/+/g, "/")
+
+    if (!destinationPath.startsWith(`/${currentUser}`)) {
+      return "Error: Cannot operate outside of user's directory"
+    }
+
+    const message = await moveFileOrDirectoryAction(
+      currentUser,
+      currentDirectory,
+      name,
+      destinationPath
+    )
+    return message
+  }
+
   const helpCommand = (): string[] => {
     const commands = [
       // Account-related commands
@@ -300,7 +330,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       ["edit [file]", "Edit file content"],
       ["seturl [file] [url]", "Set URL content for a file"],
       ["rm [file]", "Remove a file or url"],
-      // ["mv [source] [destination]", "Move a file or directory"],
+      ["mv [file/directory] [destination]", "Move a file or directory"],
       ["rename [old name] [new name]", "Rename a file or directory or url"],
       // ["chmod [permissions] [file/directory]", "Change file permissions"],
 
