@@ -1,6 +1,6 @@
 "use server"
 
-// import { calculateObjectSize } from "bson"
+import { calculateObjectSize } from "bson"
 import dbConnect from "../lib/db"
 import { User } from "../models/User"
 import bcrypt from "bcrypt"
@@ -13,9 +13,55 @@ import {
   AboutUser,
 } from "@/types/schema"
 
-// export async function calculateSize(data: any) {
-//   return calculateObjectSize(data)
-// }
+export async function calculateSize(data: FileSystemNode): Promise<number> {
+  try {
+    if (!data || typeof data !== "object") {
+      throw new Error("Invalid input: data must be a FileSystemNode object.")
+    }
+
+    return calculateObjectSize(data)
+  } catch (error) {
+    console.error("Error calculating size:", error)
+    throw error
+  }
+}
+
+export const calculateDirectorySize = async (
+  user: UserProfile,
+  location: string
+): Promise<void> => {
+  try {
+    if (location === `/${user.username}`) return
+
+    const directoriesSize = user.about.directories
+      .filter((d) => d.location.startsWith(location))
+      .reduce((total, d) => total + d.size, 0)
+
+    const filesSize = user.about.files
+      .filter((f) => f.location.startsWith(location))
+      .reduce((total, f) => total + f.size, 0)
+
+    const urlsSize = user.about.urls
+      .filter((u) => u.location.startsWith(location))
+      .reduce((total, u) => total + u.size, 0)
+
+    const totalSize = directoriesSize + filesSize + urlsSize
+
+    const dirLocationPaths = location.split("/")
+    const dirName = dirLocationPaths.pop()
+    const parentLocation = dirLocationPaths.join("/")
+
+    user.about.directories = user.about.directories.map((d) =>
+      d.location === parentLocation && d.name === dirName
+        ? { ...d, size: totalSize }
+        : d
+    )
+
+    await user.save()
+  } catch (error) {
+    console.error("Error in calculateDirectorySize:", error)
+  }
+}
 
 export async function searchUser(username: string) {
   try {
@@ -314,17 +360,18 @@ export const updateFileContent = async (
     const user = await getUserByUsername(username)
     if (!user) return "Error: User not found"
 
-    const file = await findNodeByPath(user.about, location, filename, "file")
-
-    if (!file) return "Error: File not found"
-
-    user.about.files = user.about.files.map((f) =>
-      f.location === location && f.name === filename
-        ? { ...f, content, lastModified: new Date() }
-        : f
+    const fileIndex = user.about.files.findIndex(
+      (f) => f.location === location && f.name === filename
     )
 
-    await user.save()
+    if (fileIndex === -1) return "Error: File not found"
+
+    const file = user.about.files[fileIndex]
+    file.content = content
+    file.lastModified = new Date()
+    file.size = await calculateSize(file as FileSystemNode)
+
+    await calculateDirectorySize(user, location)
 
     return "File content updated successfully"
   } catch (error) {
@@ -343,31 +390,48 @@ export const setFileUrl = async (
     const user = await getUserByUsername(username)
     if (!user) return "Error: User not found"
 
-    const urlItem = await findNodeByPath(user.about, location, filename, "url")
+    const urlIndex = user.about.urls.findIndex(
+      (u) => u.location === location && u.name === filename
+    )
 
-    if (urlItem) {
-      user.about.urls = user.about.urls.map((u) =>
-        u.location === location && u.name === filename ? { ...u, url } : u
-      )
+    if (urlIndex !== -1) {
+      const urlItem = user.about.urls[urlIndex]
+      urlItem.url = url
+      urlItem.lastModified = new Date()
+      urlItem.size = await calculateSize(urlItem as FileSystemNode)
+
       await user.save()
       return `${filename} (URL) updated successfully`
     }
 
-    const node = await findNodeByPath(user.about, location, filename, "any")
-    if (node) {
-      return `Error: An item with the name '${filename}' already exist in current directory`
+    const nodeExists =
+      user.about.files.some(
+        (f) => f.location === location && f.name === filename
+      ) ||
+      user.about.urls.some(
+        (u) => u.location === location && u.name === filename
+      )
+
+    if (nodeExists) {
+      return `Error: An item with the name '${filename}' already exists in the current directory`
     }
 
     const newUrlItem: UrlItem = {
       name: filename,
       location,
       url,
-      size: 0,
+      size: await calculateSize({
+        name: filename,
+        location,
+        url,
+        size: 0,
+        lastModified: new Date(),
+      } as FileSystemNode),
       lastModified: new Date(),
     }
 
     user.about.urls.push(newUrlItem)
-    await user.save()
+    await calculateDirectorySize(user, location)
 
     return `${filename} (URL) created successfully`
   } catch (error) {

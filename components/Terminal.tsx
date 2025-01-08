@@ -85,7 +85,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isAuthMode) return // Disable history navigation during auth
+    if (isAuthMode) return
 
     if (e.key === "ArrowUp") {
       e.preventDefault()
@@ -110,7 +110,6 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       }
     } else if (e.key === "Tab") {
       e.preventDefault()
-      // Implement tab completion here
     }
   }
 
@@ -123,7 +122,6 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
   const handleEditSubmit = async () => {
     if (editMode) {
-      // updateFileContent(editMode.filename, editMode.content)
       const message = await updateFileContentAction(
         currentUser!,
         currentDirectory,
@@ -188,7 +186,6 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
         {editMode ? (
           <div className="mt-2">
-            <div>Editing {editMode.filename}:</div>
             <textarea
               ref={textareaRef}
               value={editMode.content}
@@ -199,15 +196,9 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
                 })
               }
               onKeyDown={handleEditKeyDown}
-              className="w-full bg-zinc-800 text-zinc-100 p-2 mt-1 rounded resize-none"
+              className="w-full h-auto bg-zinc-800 outline-none p-2 mt-1 rounded resize-none"
               rows={10}
             />
-            {/* <button
-              onClick={handleEditSubmit}
-              className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
-            >
-              Save
-            </button> */}
           </div>
         ) : !searching ? (
           !isExecuting && (
