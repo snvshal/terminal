@@ -187,19 +187,36 @@ export const listDirectory = async (
       return ["No items found in the directory"]
     }
 
-    const output = ["Size       Last Modified         Name"]
+    const output = [
+      "Type                     LastWriteTime           Size  Name",
+      "----                     -------------           ----  ----",
+    ]
     allItems.forEach((node) => {
-      const size = `${node.size} B`.padEnd(11)
-      const lastModified = new Date(node.lastModified)
-        .toLocaleString()
-        .padEnd(22)
-      const name =
-        "url" in node
-          ? `${node.name} (URL)`
-          : "content" in node
-          ? node.name
-          : `${node.name}/`
-      output.push(`${size}${lastModified}${name}`)
+      const type = (
+        "content" in node ? "File" : "url" in node ? "URL" : "Directory"
+      ).padEnd(15)
+
+      const size = `${node.size}`.padStart(15)
+
+      // Format date as dd-mm-yyyy HH:MM:SS
+      const date = new Date(node.lastModified)
+      const formattedDate = [
+        date.getDate().toString().padStart(2, "0"),
+        (date.getMonth() + 1).toString().padStart(2, "0"),
+        date.getFullYear(),
+      ].join("-")
+
+      const formattedTime = [
+        date.getHours().toString().padStart(2, "0"),
+        date.getMinutes().toString().padStart(2, "0"),
+        date.getSeconds().toString().padStart(2, "0"),
+      ].join(":")
+
+      const lastModified = `${formattedDate}    ${formattedTime}`.padStart(23)
+
+      const name = `  ${node.name}`
+
+      output.push(`${type}${lastModified}${size}${name}`)
     })
 
     return output
@@ -237,7 +254,6 @@ export const changeDirectory = async (
   }
 }
 
-// fix this
 export const readFileContent = async (
   username: string,
   location: string,
@@ -503,7 +519,6 @@ export const moveFileOrDirectory = async (
       return `Error: An item with name ${name} already exists in the ${destination}`
     }
 
-    // CHANGE THE LOCATION OF SOURCE ITEM
     user.about.directories = user.about.directories.map((d) =>
       d.name === name && d.location === destination
         ? { ...d, location: destination }

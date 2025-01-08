@@ -67,6 +67,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
           if (line === "clear") {
             setOutput([])
           } else {
+            await new Promise((resolve) => setTimeout(resolve, 10))
             setOutput((prev) => [...prev, line])
           }
         }
@@ -166,7 +167,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
   return (
     <Window
-      title={"Terminal"}
+      title={currentUser ?? "Terminal"}
       onClose={onClose}
       initialPosition={initialPosition}
     >

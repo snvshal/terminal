@@ -345,9 +345,12 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       ["help", "Display this help message"],
     ]
 
-    const output = ["Command                         Description"]
+    const output = [
+      "Command                            Description",
+      "-------                            -----------",
+    ]
     commands.forEach(([cmd, desc]) => {
-      output.push(`${cmd.padEnd(32)}${desc}`)
+      output.push(`${cmd.padEnd(35)}${desc}`)
     })
 
     return output

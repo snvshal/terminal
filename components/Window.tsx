@@ -37,7 +37,7 @@ const WindowHeader: React.FC<WindowHeaderProps> = ({
         className="w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-green-500"
       />
     </div>
-    <span className="text-zinc-200 font-semibold">{title}</span>
+    <span className="font-semibold text-gray-500">{title}</span>
     <span className="w-14 flex justify-end">
       {/* <Circle className="size-4" /> */}
     </span>
