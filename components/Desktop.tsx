@@ -1,6 +1,8 @@
-import React from 'react'
+"use client"
 
-interface DesktopProps {
+import React from "react"
+
+export type DesktopProps = {
   children: React.ReactNode
 }
 
@@ -13,4 +15,3 @@ const Desktop: React.FC<DesktopProps> = ({ children }) => {
 }
 
 export default Desktop
-

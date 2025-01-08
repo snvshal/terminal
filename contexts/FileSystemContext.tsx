@@ -1,11 +1,39 @@
-import React, { createContext, useContext, useState } from "react"
+"use client"
 
-export interface FileSystemContextType {
+import React, { createContext, useContext, useState } from "react"
+import {
+  searchUser as searchUserAction,
+  signIn as signInAction,
+  signUp as signUpAction,
+  createNode as createNodeAction,
+  listDirectory as listDirectoryAction,
+  changeDirectory as changeDirectoryAction,
+  readFileContent as readFileContentAction,
+  editFileContent as editFileContentAction,
+  setFileUrl as setFileUrlAction,
+  removeNode as removeNodeAction,
+  moveFileOrDirectory as moveFileOrDirectoryAction,
+  renameFileOrDirectory as renameFileOrDirectoryAction,
+} from "../app/actions"
+
+export type FileSystemContextType = {
   currentDirectory: string
-  executeCommand: (command: string) => string[]
-  getFileContent: (filename: string) => string | null
-  updateFileContent: (filename: string, content: string) => void
-  openFile: (filename: string) => boolean
+  executeCommand: (command: string) => Promise<string[]>
+  getFullPath: (filename: string) => string
+  currentUser: string | null
+  setCurrentUser: (username: string | null) => void
+  handleAuthInput: (input: string) => Promise<string[]>
+  isAuthMode: boolean
+  setIsAuthMode: (mode: boolean) => void
+  authStep: number
+  setAuthStep: (step: number) => void
+  authType: "signin" | "signup" | null
+  setAuthType: (type: "signin" | "signup" | null) => void
+  searching: string | null
+  setEditMode: React.Dispatch<
+    React.SetStateAction<{ filename: string; content: string } | null>
+  >
+  editMode: { filename: string; content: string } | null
 }
 
 export const FileSystemContext = createContext<
@@ -20,336 +48,394 @@ export const useFileSystem = () => {
   return context
 }
 
-interface FileSystemNode {
-  name: string
-  type: "file" | "directory"
-  content?: string
-  children: { [key: string]: FileSystemNode }
-  lastModified: Date
-}
-
 export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [fileSystem, setFileSystem] = useState<FileSystemNode>({
-    name: "/",
-    type: "directory",
-    children: {},
-    lastModified: new Date(),
-  })
   const [currentDirectory, setCurrentDirectory] = useState("/")
+  const [currentUser, setCurrentUser] = useState<string | null>(null)
+  const [isAuthMode, setIsAuthMode] = useState(false)
+  const [authStep, setAuthStep] = useState(0)
+  const [authType, setAuthType] = useState<"signin" | "signup" | null>(null)
+  const [authData, setAuthData] = useState({
+    username: "",
+    email: "",
+    password: "",
+  })
+  const [editMode, setEditMode] = useState<{
+    filename: string
+    content: string
+  } | null>(null)
+  const [searching, setSearching] = useState<string | null>(null)
 
-  const executeCommand = (command: string): string[] => {
-    const [cmd, ...args] = command.split(" ")
+  const executeCommand = async (command: string): Promise<string[]> => {
+    const [cmd, ...args] = command
+      .toLocaleLowerCase()
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
 
     switch (cmd) {
       case "ls":
         return listDirectory()
       case "cd":
-        return [changeDirectory(args[0])]
+        return [await changeDirectory(args[0])]
       case "mkdir":
-        return [createDirectory(args[0])]
+        return [await createDirectory(args[0])]
       case "touch":
-        return [createFile(args[0])]
+        return [await createFile(args[0])]
       case "open":
-        return [openFileCommand(args[0])]
+        return [await readFileContent(args[0])]
+      case "edit":
+        return await editFileContent(args[0])
       case "rmdir":
-        return [removeDirectory(args[0])]
+        return [await removeDirectory(args[0])]
       case "rm":
-        return [removeFile(args[0])]
+        return [await removeFile(args[0])]
       case "pwd":
         return [printWorkingDirectory()]
       case "mv":
-        return [moveFileOrDirectory(args[0], args[1])]
+        return [await moveFileOrDirectory(args[0], args[1])]
       case "rename":
-        return [renameFileOrDirectory(args[0], args[1])]
+        return [await renameFileOrDirectory(args[0], args[1])]
       case "clear":
       case "cls":
         return ["clear"]
       case "help":
         return helpCommand()
+      // case "chmod":
+      //   return [changePermissions(args[0], args[1])]
+      case "signup":
+        return signUp()
+      case "signin":
+        return signIn()
+      case "signout":
+        return signOut()
+      case "search":
+        return await searchUserAction(args[0])
+      case "seturl":
+        return [await setFileUrl(args[0], args[1])]
       default:
         return [`Command not found: ${cmd}`]
     }
   }
 
-  const listDirectory = (): string[] => {
-    const currentNode = getNodeAtPath(currentDirectory)
-    if (currentNode && currentNode.type === "directory") {
-      const files = Object.entries(currentNode.children)
-      if (files.length === 0) return ["Directory is empty"]
+  const handleAuthInput = async (input: string): Promise<string[]> => {
+    if (authType === "signup") {
+      if (authStep === 0) {
+        setAuthData({ ...authData, username: input })
+        setAuthStep(1)
+        return ["Username: " + input]
+      } else if (authStep === 1) {
+        setAuthData({ ...authData, email: input })
+        setAuthStep(2)
+        return ["Email: " + input]
+      } else if (authStep === 2) {
+        setAuthData({ ...authData, password: input })
+        setAuthStep(0)
+        setIsAuthMode(false)
+        setAuthType(null)
 
-      const output = ["Type       Name            Size       Last Modified"]
-      files.forEach(([name, node]) => {
-        const type = node.type === "directory" ? "Directory" : "File"
-        const size =
-          node.type === "file" ? `${node.content?.length || 0} bytes` : "-"
-        const lastModified = node.lastModified.toLocaleString()
-        output.push(
-          `${type.padEnd(10)}${name.padEnd(16)}${size.padEnd(
-            11
-          )}${lastModified}`
+        setSearching("Creating your account")
+        const { success, message } = await signUpAction(
+          authData.username,
+          authData.email,
+          input
         )
-      })
-      return output
+        setSearching(null)
+        if (success) {
+          setCurrentUser(authData.username)
+          setCurrentDirectory(`/${authData.username}`)
+          return [`Signup successful. Welcome, ${authData.username}!`]
+        } else {
+          return ["Signup failed: " + message]
+        }
+      }
+    } else if (authType === "signin") {
+      if (authStep === 0) {
+        setAuthData({ ...authData, email: input })
+        setAuthStep(1)
+        return ["Email: " + input]
+      } else if (authStep === 1) {
+        setAuthData({ ...authData, password: input })
+        setAuthStep(0)
+        setIsAuthMode(false)
+        setAuthType(null)
+
+        const identifier = authData.email ?? authData.username
+        const password = input
+
+        setSearching("Authenticating")
+        const { success, content } = await signInAction(identifier, password)
+        setSearching(null)
+
+        if (success) {
+          const username = content
+          setCurrentUser(username)
+          setCurrentDirectory(`/${username}`)
+          return [`Login successful. Welcome back, ${username}!`]
+        } else {
+          return [content]
+        }
+      }
     }
+    return []
+  }
+
+  const listDirectory = async (): Promise<string[]> => {
+    if (!currentUser) return ["Signin to list items"]
+    if (currentDirectory) {
+      const list = await listDirectoryAction(currentUser!, currentDirectory)
+      return list
+    }
+
     return ["Error: Not a directory"]
   }
 
-  const changeDirectory = (path: string): string => {
-    if (path === "..") {
-      const parentPath = currentDirectory.split("/").slice(0, -1).join("/")
-      setCurrentDirectory(parentPath || "/")
+  const changeDirectory = async (path: string): Promise<string> => {
+    if (!path) return "Error: No directory specified"
+    if (currentDirectory) {
+      if (path === ".." && currentDirectory === "/") {
+        return "Error: Cannot go back from root"
+      } else if (path === ".." && currentDirectory === `/${currentUser}`) {
+        return "Error: Cannot go back from home directory without signing out"
+      } else if (path === "..") {
+        const newPath = currentDirectory.split("/").slice(0, -1).join("/")
+        setCurrentDirectory(newPath)
+        return ""
+      }
+
+      const { success, content } = await changeDirectoryAction(
+        currentUser!,
+        currentDirectory,
+        path
+      )
+
+      if (!success) return content
+      setCurrentDirectory(content)
       return ""
     }
 
-    const newPath = path.startsWith("/")
-      ? path
-      : `${currentDirectory}/${path}`.replace(/\/+/g, "/")
-    const node = getNodeAtPath(newPath)
-
-    if (node && node.type === "directory") {
-      setCurrentDirectory(newPath)
-      return ""
-    }
     return "Error: Directory not found"
   }
 
-  const createDirectory = (name: string): string => {
-    return createNode(name, "directory")
+  const createDirectory = async (name: string): Promise<string> => {
+    if (!currentUser) return "Signin to create directory"
+    if (!name) return "Error: No directory name specified"
+    return createNodeAction(currentUser, currentDirectory, name, "directory")
   }
 
-  const createFile = (name: string): string => {
-    return createNode(name, "file")
+  const createFile = async (name: string): Promise<string> => {
+    if (!currentUser) return "Signin to create file"
+    if (!name) return "Error: No file name specified"
+    return createNodeAction(currentUser, currentDirectory, name, "file")
   }
 
-  const createNode = (name: string, type: "file" | "directory"): string => {
-    const currentNode = getNodeAtPath(currentDirectory)
-    if (currentNode && currentNode.type === "directory") {
-      if (currentNode.children[name]) {
-        return `Error: ${type === "file" ? "File" : "Directory"} already exists`
-      }
-      setFileSystem((prev) => {
-        const newFileSystem = { ...prev }
-        const newNode: FileSystemNode = {
-          name,
-          type,
-          lastModified: new Date(),
-          children: {},
-          ...(type === "file" ? { content: "" } : {}),
-        }
-        const currentNodeInNewFS = getNodeAtPath(
-          currentDirectory,
-          newFileSystem
-        )
-        if (currentNodeInNewFS && currentNodeInNewFS.type === "directory") {
-          currentNodeInNewFS.children[name] = newNode
-        }
-        return newFileSystem
-      })
-      return `${type === "file" ? "File" : "Directory"} created: ${name}`
-    }
-    return "Error: Cannot create in this location"
-  }
+  const readFileContent = async (filename: string): Promise<string> => {
+    if (!currentUser) return "Signin to read file"
+    if (!filename) return "Error: No file specified"
 
-  const getNodeAtPath = (
-    path: string,
-    root: FileSystemNode = fileSystem
-  ): FileSystemNode | undefined => {
-    const parts = path.split("/").filter(Boolean)
-    let current: FileSystemNode = root
-
-    for (const part of parts) {
-      if (current.type === "directory" && current.children[part]) {
-        current = current.children[part]
-      } else {
-        return undefined
-      }
-    }
-
-    return current
-  }
-
-  const getFileContent = (filename: string): string | null => {
-    const filePath = `${currentDirectory}/${filename}`.replace(/\/+/g, "/")
-    const fileNode = getNodeAtPath(filePath)
-    if (fileNode && fileNode.type === "file") {
-      return fileNode.content || ""
-    }
-    return null
-  }
-
-  const updateFileContent = (filename: string, content: string) => {
-    const filePath = `${currentDirectory}/${filename}`.replace(/\/+/g, "/")
-    setFileSystem((prev) => {
-      const newFileSystem = { ...prev }
-      const fileNode = getNodeAtPath(filePath, newFileSystem)
-      if (fileNode && fileNode.type === "file") {
-        fileNode.content = content
-        fileNode.lastModified = new Date()
-      }
-      return newFileSystem
-    })
-  }
-
-  const openFileCommand = (filename: string): string => {
-    const filePath = `${currentDirectory}/${filename}`.replace(/\/+/g, "/")
-    const fileNode = getNodeAtPath(filePath)
-    if (fileNode && fileNode.type === "file") {
-      return `Opening ${filename}`
+    if (currentDirectory) {
+      const message = await readFileContentAction(
+        currentUser!,
+        currentDirectory,
+        filename
+      )
+      return message
     }
     return `Error: File not found: ${filename}`
   }
 
-  const openFile = (filename: string): boolean => {
-    const filePath = `${currentDirectory}/${filename}`.replace(/\/+/g, "/")
-    const fileNode = getNodeAtPath(filePath)
-    return !!(fileNode && fileNode.type === "file")
+  const removeDirectory = async (filename: string): Promise<string> => {
+    if (!currentUser) return "Signin to remove directory"
+    if (!filename) return "Error: No directory specified"
+    return removeNodeAction(
+      currentUser!,
+      currentDirectory,
+      filename,
+      "directory"
+    )
   }
 
-  const removeDirectory = (name: string): string => {
-    return removeNode(name, "directory")
+  const removeFile = async (filename: string): Promise<string> => {
+    if (!currentUser) return "Signin to remove file"
+    if (!filename) return "Error: No file specified"
+    return removeNodeAction(currentUser!, currentDirectory, filename, "file")
   }
 
-  const removeFile = (name: string): string => {
-    return removeNode(name, "file")
-  }
+  const renameFileOrDirectory = async (
+    oldName: string,
+    newName: string
+  ): Promise<string> => {
+    if (!currentUser) return "Signin to rename file/directory"
+    if (!oldName || !newName)
+      return "Error: Old name and new name must be specified"
 
-  const removeNode = (name: string, type: "file" | "directory"): string => {
-    const currentNode = getNodeAtPath(currentDirectory)
-    if (currentNode && currentNode.type === "directory") {
-      const nodeToRemove = currentNode.children[name]
-      if (!nodeToRemove) {
-        return `Error: ${type === "file" ? "File" : "Directory"} not found`
-      }
-      if (
-        type === "directory" &&
-        nodeToRemove.type === "directory" &&
-        Object.keys(nodeToRemove.children).length > 0
-      ) {
-        return "Error: Directory is not empty"
-      }
-      setFileSystem((prev) => {
-        const newFileSystem = { ...prev }
-        const currentNodeInNewFS = getNodeAtPath(
-          currentDirectory,
-          newFileSystem
-        )
-        if (currentNodeInNewFS && currentNodeInNewFS.type === "directory") {
-          delete currentNodeInNewFS.children[name]
-        }
-        return newFileSystem
-      })
-      return `${type === "file" ? "File" : "Directory"} removed: ${name}`
+    if (oldName === newName) {
+      return "Error: The new name must be different from the current name."
     }
-    return "Error: Cannot remove from this location"
+
+    const message = await renameFileOrDirectoryAction(
+      currentUser,
+      currentDirectory,
+      oldName,
+      newName
+    )
+
+    return message
   }
 
   const printWorkingDirectory = (): string => {
     return currentDirectory
   }
 
-  const moveFileOrDirectory = (source: string, destination: string): string => {
-    const sourcePath = `${currentDirectory}/${source}`.replace(/\/+/g, "/")
-    const destinationPath = `${currentDirectory}/${destination}`.replace(
-      /\/+/g,
-      "/"
+  const moveFileOrDirectory = async (
+    name: string,
+    destination: string
+  ): Promise<string> => {
+    if (!currentUser) return "Signin to move file/directory"
+    if (!name || !destination)
+      return "Error: Source and destination must be specified"
+
+    if (name === destination) {
+      return "Error: Destination path cannot be the source path"
+    }
+
+    const destinationPath = destination.startsWith("/")
+      ? destination
+      : `${currentDirectory}/${destination}`.replace(/\/+/g, "/")
+
+    if (!destinationPath.startsWith(`/${currentUser}`)) {
+      return "Error: Cannot operate outside of user's directory"
+    }
+
+    const message = await moveFileOrDirectoryAction(
+      currentUser,
+      currentDirectory,
+      name,
+      destinationPath
     )
-
-    const sourceNode = getNodeAtPath(sourcePath)
-    if (!sourceNode) {
-      return `Error: Source not found: ${source}`
-    }
-
-    const destinationParentPath = destinationPath
-      .split("/")
-      .slice(0, -1)
-      .join("/")
-    const destinationParentNode = getNodeAtPath(destinationParentPath)
-    if (!destinationParentNode || destinationParentNode.type !== "directory") {
-      return `Error: Destination directory not found: ${destinationParentPath}`
-    }
-
-    setFileSystem((prev) => {
-      const newFileSystem = { ...prev }
-      const sourceParentPath = sourcePath.split("/").slice(0, -1).join("/")
-      const sourceParentNode = getNodeAtPath(sourceParentPath, newFileSystem)
-      const destinationParentNode = getNodeAtPath(
-        destinationParentPath,
-        newFileSystem
-      )
-
-      if (
-        sourceParentNode &&
-        sourceParentNode.type === "directory" &&
-        destinationParentNode &&
-        destinationParentNode.type === "directory"
-      ) {
-        const movedNode = sourceParentNode.children[source]
-        delete sourceParentNode.children[source]
-        destinationParentNode.children[destination.split("/").pop()!] =
-          movedNode
-      }
-
-      return newFileSystem
-    })
-
-    return `Moved ${source} to ${destination}`
-  }
-
-  const renameFileOrDirectory = (oldName: string, newName: string): string => {
-    const currentNode = getNodeAtPath(currentDirectory)
-    if (currentNode && currentNode.type === "directory") {
-      const nodeToRename = currentNode.children[oldName]
-      if (!nodeToRename) {
-        return `Error: ${oldName} not found`
-      }
-      if (currentNode.children[newName]) {
-        return `Error: ${newName} already exists`
-      }
-      setFileSystem((prev) => {
-        const newFileSystem = { ...prev }
-        const currentNodeInNewFS = getNodeAtPath(
-          currentDirectory,
-          newFileSystem
-        )
-        if (currentNodeInNewFS && currentNodeInNewFS.type === "directory") {
-          currentNodeInNewFS.children[newName] = {
-            ...nodeToRename,
-            name: newName,
-            lastModified: new Date(),
-          }
-          delete currentNodeInNewFS.children[oldName]
-        }
-        return newFileSystem
-      })
-      return `Renamed ${oldName} to ${newName}`
-    }
-    return "Error: Cannot rename in this location"
+    return message
   }
 
   const helpCommand = (): string[] => {
     const commands = [
+      // Account-related commands
+      ["signup", "Create a new user account"],
+      ["signin", "Sign in to your account"],
+      ["signout", "Sign out of your account"],
+      ["search [username]", "Search for a user"],
+
+      // Basic file and directory commands
       ["ls", "List directory contents"],
-      ["cd", "Change the current directory"],
-      ["mkdir", "Create a new directory"],
-      ["touch", "Create a new file"],
-      ["open", "Open a file in the notepad"],
-      ["rmdir", "Remove an empty directory"],
-      ["rm", "Remove a file"],
       ["pwd", "Print working directory"],
-      ["mv", "Move a file or directory"],
-      ["rename", "Rename a file or directory"],
+      ["cd [directory]", "Change the current directory"],
+      ["mkdir [directory]", "Create a new directory"],
+      ["rmdir [directory]", "Remove an empty directory"],
+      ["touch [file]", "Create a new file"],
+      ["open [file]", "Display file or url content"],
+      ["edit [file]", "Edit file content"],
+      ["seturl [file] [url]", "Set and update URL content for a file"],
+      ["rm [file]", "Remove a file or url"],
+      ["mv [file/directory] [destination]", "Move a file or directory"],
+      ["rename [old name] [new name]", "Rename a file or directory or url"],
+      // ["chmod [permissions] [file/directory]", "Change file permissions"],
+
+      // Utility commands
       ["clear/cls", "Clear the terminal screen"],
       ["help", "Display this help message"],
     ]
 
-    const output = ["Command     Description"]
+    const output = [
+      "Command                            Description",
+      "-------                            -----------",
+    ]
     commands.forEach(([cmd, desc]) => {
-      output.push(`${cmd.padEnd(12)}${desc}`)
+      output.push(`${cmd.padEnd(35)}${desc}`)
     })
 
     return output
+  }
+
+  // const changePermissions = (permissions: string, name: string): string => {
+  //   // Permissions are not applicable in this file system implementation
+  //   return "Error: Changing permissions is not supported in this file system"
+  // }
+
+  const getFullPath = (filename: string): string => {
+    return `${currentDirectory}/${filename}`.replace(/\/+/g, "/")
+  }
+
+  const editFileContent = async (filename: string): Promise<string[]> => {
+    if (!currentUser) return ["Signin to edit file"]
+    if (!filename) return ["Error: No file specified"]
+    if (currentDirectory) {
+      const { success, content } = await editFileContentAction(
+        currentUser!,
+        currentDirectory,
+        filename
+      )
+      if (success) {
+        setEditMode({ filename, content })
+        return [`EDIT_MODE:${filename}`]
+      } else {
+        return [`Error: ${content}`]
+      }
+    }
+
+    return [`Error: File not found`]
+  }
+
+  const setFileUrl = async (filename: string, url: string): Promise<string> => {
+    if (!currentUser) return "Signin to set url"
+    if (!filename) return "Error: No file specified"
+    if (!url) return "Error: No URL specified"
+
+    const result = await setFileUrlAction(
+      currentUser,
+      currentDirectory,
+      filename,
+      url
+    )
+
+    return result
+  }
+
+  const signUp = (): string[] => {
+    if (currentUser) {
+      return [
+        "Error: You are already signed in!",
+        "Sign out to create a new account",
+      ]
+    } else {
+      setIsAuthMode(true)
+      setAuthType("signup")
+      setAuthStep(0)
+      return [""]
+    }
+  }
+
+  const signIn = (): string[] => {
+    if (currentUser) {
+      return [
+        "Error: You are already signed in!",
+        "Sign out to sign in with a different account",
+      ]
+    } else {
+      setIsAuthMode(true)
+      setAuthType("signin")
+      setAuthStep(0)
+      return [""]
+    }
+  }
+
+  const signOut = (): string[] => {
+    if (!currentUser) {
+      return ["Error: You are not signed in!"]
+    } else {
+      setCurrentUser(null)
+      setCurrentDirectory("/")
+      return ["You have been signed out"]
+    }
   }
 
   return (
@@ -357,9 +443,19 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         currentDirectory,
         executeCommand,
-        getFileContent,
-        updateFileContent,
-        openFile,
+        getFullPath,
+        currentUser,
+        setCurrentUser,
+        handleAuthInput,
+        isAuthMode,
+        setIsAuthMode,
+        authStep,
+        setAuthStep,
+        authType,
+        setAuthType,
+        searching,
+        setEditMode,
+        editMode,
       }}
     >
       {children}

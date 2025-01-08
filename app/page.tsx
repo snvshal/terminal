@@ -1,26 +1,37 @@
 "use client"
 
-import React, { useState, useContext } from "react"
+import React, { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import Desktop from "../components/Desktop"
-import {
-  FileSystemProvider,
-  FileSystemContext,
-  FileSystemContextType,
-} from "../contexts/FileSystemContext"
+import { FileSystemProvider } from "../contexts/FileSystemContext"
+import { initialWindowSize } from "@/components/Window"
 
 const Terminal = dynamic(() => import("../components/Terminal"), { ssr: false })
-const Notepad = dynamic(() => import("../components/Notepad"), { ssr: false })
 
-interface WindowProps {
+type WindowProps = {
   id: string
   component: React.ReactElement
 }
 
 function HomeContent() {
-  const fileSystemContext = useContext(FileSystemContext)
-  const { executeCommand, openFile } =
-    fileSystemContext as FileSystemContextType
+  const [openWindows, setOpenWindows] = useState<WindowProps[]>([])
+  const [windowCenter, setWindowCenter] = useState<{
+    x: number
+    y: number
+  } | null>(null)
+
+  useEffect(() => {
+    const calculateCenter = () => {
+      const x = (window.innerWidth - initialWindowSize.width) / 2
+      const y = (window.innerHeight - initialWindowSize.height) / 2
+      setWindowCenter({ x, y })
+    }
+
+    calculateCenter()
+
+    window.addEventListener("resize", calculateCenter)
+    return () => window.removeEventListener("resize", calculateCenter)
+  }, [])
 
   const closeWindow = (id: string) => {
     setOpenWindows((prevWindows) =>
@@ -28,52 +39,49 @@ function HomeContent() {
     )
   }
 
-  const openNotepad = (filename: string) => {
-    const id = `notepad-${filename}-${Date.now()}`
-    setOpenWindows((prevWindows) => [
-      ...prevWindows,
+  useEffect(() => {
+    if (windowCenter) {
+      setOpenWindows([
+        {
+          id: "terminal",
+          component: (
+            <Terminal
+              initialPosition={windowCenter}
+              onClose={() => closeWindow("terminal")}
+            />
+          ),
+        },
+      ])
+    }
+  }, [windowCenter])
+
+  const handleDoubleClick = () => {
+    console.log("✨ Double clicked ✨")
+    setOpenWindows([
       {
-        id,
+        id: "terminal",
         component: (
-          <Notepad
-            filename={filename}
-            initialPosition={{ x: 150, y: 150 }}
-            onClose={() => closeWindow(id)}
+          <Terminal
+            initialPosition={windowCenter!}
+            onClose={() => closeWindow("terminal")}
           />
         ),
       },
     ])
   }
 
-  const handleExecuteCommand = (command: string) => {
-    const result = executeCommand(command)
-    if (result[0].startsWith("Opening ")) {
-      const filename = result[0].split(" ")[1]
-      if (openFile(filename)) {
-        openNotepad(filename)
-      }
-    }
-    return result
-  }
-
-  const [openWindows, setOpenWindows] = useState<WindowProps[]>([
-    {
-      id: "terminal",
-      component: (
-        <Terminal
-          initialPosition={{ x: 100, y: 100 }}
-          onClose={() => closeWindow("terminal")}
-          executeCommand={handleExecuteCommand}
-        />
-      ),
-    },
-  ])
-
   return (
     <Desktop>
       {openWindows.map(({ id, component }) => (
         <div key={id}>{component}</div>
       ))}
+      {!openWindows.length && (
+        <div className="h-screen w-full flex items-center text-muted-foreground justify-center">
+          <button onDoubleClick={handleDoubleClick} className="text-gray-500">
+            Double Click
+          </button>
+        </div>
+      )}
     </Desktop>
   )
 }
