@@ -4,11 +4,11 @@ import React, { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import Desktop from "../components/Desktop"
 import { FileSystemProvider } from "../contexts/FileSystemContext"
-import { windowInitialSize } from "@/components/Window"
+import { initialWindowSize } from "@/components/Window"
 
 const Terminal = dynamic(() => import("../components/Terminal"), { ssr: false })
 
-export type WindowProps = {
+type WindowProps = {
   id: string
   component: React.ReactElement
 }
@@ -22,8 +22,8 @@ function HomeContent() {
 
   useEffect(() => {
     const calculateCenter = () => {
-      const x = (window.innerWidth - windowInitialSize.width) / 2
-      const y = (window.innerHeight - windowInitialSize.height) / 2
+      const x = (window.innerWidth - initialWindowSize.width) / 2
+      const y = (window.innerHeight - initialWindowSize.height) / 2
       setWindowCenter({ x, y })
     }
 

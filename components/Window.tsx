@@ -1,17 +1,87 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import useFullScreen from "@/hooks/useFullScreen"
+import {
+  GlassyBlurSkeletonProps,
+  WindowProps,
+  WindowSize,
+  WindowHeaderProps,
+} from "@/types/props"
 // import { Circle } from 'lucide-react'
 
-export type WindowProps = {
-  title: string
-  children: React.ReactNode
-  onClose: () => void
-  initialPosition: { x: number; y: number }
-}
+export const initialWindowSize = { width: 600, height: 400 }
 
-export const windowInitialSize = { width: 600, height: 400 }
+const WindowHeader: React.FC<WindowHeaderProps> = ({
+  title,
+  onClose,
+  toggleWindowFullScreen,
+  toggleFullScreen,
+  onMouseDown,
+}) => (
+  <div
+    className="bg-zinc-800 px-4 py-2 flex justify-between items-center cursor-grab active:cursor-grabbing"
+    onMouseDown={onMouseDown}
+  >
+    <div className="group flex space-x-2.5">
+      <button
+        onClick={onClose}
+        className="group w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-red-500"
+      />
+      <button
+        onClick={toggleWindowFullScreen}
+        className="w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-yellow-500"
+      />
+      <button
+        onClick={toggleFullScreen}
+        className="w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-green-500"
+      />
+    </div>
+    <span className="text-zinc-200 font-semibold">{title}</span>
+    <span className="w-14 flex justify-end">
+      {/* <Circle className="size-4" /> */}
+    </span>
+  </div>
+)
+
+const ResizeHandles: React.FC<{
+  onMouseDown: (e: React.MouseEvent, direction: string) => void
+}> = ({ onMouseDown }) => (
+  <>
+    <div
+      className="absolute top-0 right-0 w-2 h-2 cursor-ne-resize"
+      onMouseDown={(e) => onMouseDown(e, "ne")}
+    ></div>
+    <div
+      className="absolute bottom-0 right-0 w-2 h-2 cursor-se-resize"
+      onMouseDown={(e) => onMouseDown(e, "se")}
+    ></div>
+    <div
+      className="absolute bottom-0 left-0 w-2 h-2 cursor-sw-resize"
+      onMouseDown={(e) => onMouseDown(e, "sw")}
+    ></div>
+    <div
+      className="absolute top-0 left-0 w-2 h-2 cursor-nw-resize"
+      onMouseDown={(e) => onMouseDown(e, "nw")}
+    ></div>
+    <div
+      className="absolute top-0 left-0 right-0 h-1 cursor-n-resize"
+      onMouseDown={(e) => onMouseDown(e, "n")}
+    ></div>
+    <div
+      className="absolute bottom-0 left-0 right-0 h-1 cursor-s-resize"
+      onMouseDown={(e) => onMouseDown(e, "s")}
+    ></div>
+    <div
+      className="absolute top-0 bottom-0 left-0 w-1 cursor-w-resize"
+      onMouseDown={(e) => onMouseDown(e, "w")}
+    ></div>
+    <div
+      className="absolute top-0 bottom-0 right-0 w-1 cursor-e-resize"
+      onMouseDown={(e) => onMouseDown(e, "e")}
+    ></div>
+  </>
+)
 
 const Window: React.FC<WindowProps> = ({
   title,
@@ -20,36 +90,57 @@ const Window: React.FC<WindowProps> = ({
   initialPosition,
 }) => {
   const [position, setPosition] = useState(initialPosition)
-  const [size, setSize] = useState(windowInitialSize)
+  const [size, setSize] = useState(initialWindowSize)
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [resizeDirection, setResizeDirection] = useState<string | null>(null)
   const [isFullScreen, setIsFullScreen] = useState(false)
-  const [wasFullScreen, setWasFullScreen] = useState(false)
-  const [lastPosition, setLastPosition] = useState(initialPosition)
-  const [showGlassyAnimation, setShowGlassyAnimation] = useState(false)
+  const [lastPosition, setLastPosition] = useState(initialPosition) // Update 3
   const windowRef = useRef<HTMLDivElement>(null)
   const { toggleFullScreen } = useFullScreen()
+
+  const toggleWindowFullScreen = useCallback(() => {
+    setIsFullScreen((prev) => !prev)
+    if (!isFullScreen) {
+      setLastPosition(position)
+      setSize({ width: window.innerWidth, height: window.innerHeight })
+      setPosition({ x: 0, y: 0 })
+    } else {
+      setSize(initialWindowSize)
+      setPosition({
+        x: Math.max(
+          0,
+          Math.min(lastPosition.x, window.innerWidth - initialWindowSize.width)
+        ),
+        y: Math.max(
+          0,
+          Math.min(
+            lastPosition.y,
+            window.innerHeight - initialWindowSize.height
+          )
+        ),
+      })
+    }
+  }, [isFullScreen, position, lastPosition])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
         if (isFullScreen) {
           const xPercentage = e.clientX / window.innerWidth
+          const yPercentage = e.clientY / window.innerHeight
           setIsFullScreen(false)
-          setSize(windowInitialSize)
+          setSize(initialWindowSize)
           setPosition({
-            x: e.clientX - windowInitialSize.width * xPercentage,
-            y: e.clientY,
+            x: e.clientX - initialWindowSize.width * xPercentage,
+            y: e.clientY - initialWindowSize.height * yPercentage,
           })
         } else {
-          const newY = Math.max(0, e.clientY - dragOffset.y)
           setPosition({
             x: e.clientX - dragOffset.x,
-            y: newY,
+            y: Math.max(0, e.clientY - dragOffset.y),
           })
-          setShowGlassyAnimation(newY <= 0)
         }
       } else if (isResizing && !isFullScreen) {
         const newSize = { ...size }
@@ -77,14 +168,12 @@ const Window: React.FC<WindowProps> = ({
       if (isDragging) {
         if (position.y <= 0 && !isFullScreen) {
           toggleWindowFullScreen()
-        } else if (isFullScreen) {
+        } else if (position.y >= 10 && isFullScreen) {
           toggleWindowFullScreen()
         }
       }
       setIsDragging(false)
       setIsResizing(false)
-      setWasFullScreen(isFullScreen)
-      setShowGlassyAnimation(false)
     }
 
     if (isDragging || isResizing) {
@@ -104,23 +193,8 @@ const Window: React.FC<WindowProps> = ({
     size,
     resizeDirection,
     isFullScreen,
+    toggleWindowFullScreen,
   ])
-
-  useEffect(() => {
-    const disableTextSelection = (e: Event) => {
-      e.preventDefault()
-    }
-
-    if (isDragging) {
-      document.body.style.userSelect = "none"
-      document.addEventListener("selectstart", disableTextSelection)
-    }
-
-    return () => {
-      document.body.style.userSelect = ""
-      document.removeEventListener("selectstart", disableTextSelection)
-    }
-  }, [isDragging])
 
   const handleMouseDown = (
     e: React.MouseEvent,
@@ -139,50 +213,15 @@ const Window: React.FC<WindowProps> = ({
     }
   }
 
-  const toggleWindowFullScreen = () => {
-    setIsFullScreen(!isFullScreen)
-    if (!isFullScreen) {
-      setLastPosition(position)
-      setSize({ width: window.innerWidth, height: window.innerHeight })
-      setPosition({ x: 0, y: 0 })
-    } else {
-      setSize(windowInitialSize)
-      setPosition({
-        x: Math.max(
-          0,
-          Math.min(lastPosition.x, window.innerWidth - windowInitialSize.width)
-        ),
-        y: Math.max(
-          0,
-          Math.min(
-            lastPosition.y,
-            window.innerHeight - windowInitialSize.height
-          )
-        ),
-      })
-    }
-  }
-
-  const GlassyBlurSkeleton = () => (
-    <div
-      className={`fixed inset-2 bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm transition-all duration-300 rounded-xl ${
-        showGlassyAnimation ? "opacity-100" : "opacity-0"
-      }`}
-      // style={{
-      //   clipPath: showGlassyAnimation
-      //     ? "inset(0)"
-      //     : `inset(${position.y}px ${
-      //         window.innerWidth - (position.x + size.width)
-      //       }px ${window.innerHeight - (position.y + size.height)}px ${
-      //         position.x
-      //       }px round 0.75rem)`,
-      // }}
-    />
-  )
-
   return (
     <>
-      <GlassyBlurSkeleton />
+      {position.y <= 2 && (
+        <GlassyBlurSkeleton
+          position={position}
+          initialWindowSize={initialWindowSize}
+        />
+      )}
+
       <div
         ref={windowRef}
         className="absolute bg-zinc-900 border border-zinc-700 rounded-xl shadow-lg overflow-hidden"
@@ -204,67 +243,97 @@ const Window: React.FC<WindowProps> = ({
               : size.height
           }px`,
           borderRadius: isFullScreen ? "0" : undefined,
-          transition: isDragging ? "none" : "all 0.3s ease",
+          transition: isDragging || isResizing ? "none" : "all 0.3s ease",
         }}
       >
-        <div
-          className="bg-zinc-800 px-4 py-2 flex justify-between items-center cursor-grab active:cursor-grabbing"
+        <WindowHeader
+          title={title}
+          onClose={onClose}
+          toggleWindowFullScreen={toggleWindowFullScreen}
+          toggleFullScreen={toggleFullScreen}
           onMouseDown={(e) => handleMouseDown(e, "drag")}
-        >
-          <div className="group flex space-x-2.5">
-            <button
-              onClick={onClose}
-              className="group w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-red-500"
-            />
-            <button
-              onClick={toggleWindowFullScreen}
-              className="w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-yellow-500"
-            />
-            <button
-              onClick={toggleFullScreen}
-              className="w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-green-500"
-            />
-          </div>
-          <span className="text-zinc-200 font-semibold">{title}</span>
-          <span className="w-14 flex justify-end">
-            {/* <Circle className="size-4" /> */}
-          </span>
-        </div>
+        />
         <div className="h-[calc(100%-2.5rem)] overflow-auto">{children}</div>
-        <div
-          className="absolute top-0 right-0 w-2 h-2 cursor-ne-resize"
-          onMouseDown={(e) => handleMouseDown(e, "resize", "ne")}
-        ></div>
-        <div
-          className="absolute bottom-0 right-0 w-2 h-2 cursor-se-resize"
-          onMouseDown={(e) => handleMouseDown(e, "resize", "se")}
-        ></div>
-        <div
-          className="absolute bottom-0 left-0 w-2 h-2 cursor-sw-resize"
-          onMouseDown={(e) => handleMouseDown(e, "resize", "sw")}
-        ></div>
-        <div
-          className="absolute top-0 left-0 w-2 h-2 cursor-nw-resize"
-          onMouseDown={(e) => handleMouseDown(e, "resize", "nw")}
-        ></div>
-        <div
-          className="absolute top-0 left-0 right-0 h-1 cursor-n-resize"
-          onMouseDown={(e) => handleMouseDown(e, "resize", "n")}
-        ></div>
-        <div
-          className="absolute bottom-0 left-0 right-0 h-1 cursor-s-resize"
-          onMouseDown={(e) => handleMouseDown(e, "resize", "s")}
-        ></div>
-        <div
-          className="absolute top-0 bottom-0 left-0 w-1 cursor-w-resize"
-          onMouseDown={(e) => handleMouseDown(e, "resize", "w")}
-        ></div>
-        <div
-          className="absolute top-0 bottom-0 right-0 w-1 cursor-e-resize"
-          onMouseDown={(e) => handleMouseDown(e, "resize", "e")}
-        ></div>
+        {!(position.x <= 0 && position.y <= 0) && (
+          <ResizeHandles
+            onMouseDown={(e, direction) =>
+              handleMouseDown(e, "resize", direction)
+            }
+          />
+        )}
       </div>
     </>
+  )
+}
+
+const GlassyBlurSkeleton: React.FC<GlassyBlurSkeletonProps> = ({
+  position,
+  initialWindowSize,
+  opacity = 0.2,
+  blur = 16,
+  borderRadius = "1rem",
+}) => {
+  const [windowSize, setWindowSize] = useState<WindowSize>({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  })
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+    }
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
+  return (
+    <div
+      className={`
+        fixed
+        transition-all
+        duration-300
+        ease-in-out
+        bg-gradient-to-br
+        from-white/40
+        via-white/20
+        to-transparent
+        shadow-2xl
+        backdrop-filter
+        backdrop-blur-lg
+        border
+        border-white/25
+      `}
+      style={{
+        ...(position.y > 0
+          ? {
+              top: position.y,
+              left: position.x,
+              width: initialWindowSize.width,
+              height: initialWindowSize.height,
+            }
+          : {
+              inset: 8,
+              width: windowSize.width - 16,
+              height: windowSize.height - 16,
+            }),
+        borderRadius,
+        backdropFilter: `blur(${blur}px) saturate(150%)`,
+        background: `
+          linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)),
+          radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 70%)
+        `,
+        backgroundColor: `rgba(255, 255, 255, ${opacity})`,
+        boxShadow: `
+          0 10px 30px rgba(0, 0, 0, 0.2),
+          inset 0 0 30px rgba(255, 255, 255, 0.2),
+          0 5px 10px rgba(0, 0, 0, 0.1)
+        `,
+      }}
+    />
   )
 }
 
