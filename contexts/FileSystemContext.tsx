@@ -122,11 +122,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleAuthInput = async (input: string): Promise<string[]> => {
     if (authType === "signup") {
       if (authStep === 0) {
-        setAuthData({ ...authData, username: input })
+        setAuthData({ ...authData, username: input.toLocaleLowerCase() })
         setAuthStep(1)
         return ["Username: " + input]
       } else if (authStep === 1) {
-        setAuthData({ ...authData, email: input })
+        setAuthData({ ...authData, email: input.toLocaleLowerCase() })
         setAuthStep(2)
         return ["Email: " + input]
       } else if (authStep === 2) {
@@ -152,7 +152,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } else if (authType === "signin") {
       if (authStep === 0) {
-        setAuthData({ ...authData, email: input })
+        setAuthData({ ...authData, email: input.toLocaleLowerCase() })
         setAuthStep(1)
         return ["Email: " + input]
       } else if (authStep === 1) {

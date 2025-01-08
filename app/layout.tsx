@@ -1,11 +1,11 @@
-import './globals.css'
-import { Inter } from 'next/font/google'
+import "./globals.css"
+import { Geist_Mono } from "next/font/google"
 
-const inter = Inter({ subsets: ['latin'] })
+const geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata = {
-  title: 'OS Terminal Simulation',
-  description: 'A web-based OS terminal simulation',
+  title: "OS Terminal Simulation",
+  description: "A web-based OS terminal simulation",
 }
 
 export default function RootLayout({
@@ -15,8 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={geistMono.className}>{children}</body>
     </html>
   )
 }
-
