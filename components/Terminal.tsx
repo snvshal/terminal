@@ -215,7 +215,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
         ) : !searching ? (
           !isExecuting && (
             <div className="flex items-center whitespace-pre">
-              <span>{`${currentUser}@${currentDirectory} $ `}</span>
+              <span>{`${currentUser ?? ""}@${currentDirectory} $ `}</span>
               <form onSubmit={handleInputSubmit} className="flex-grow">
                 <input
                   ref={inputRef}

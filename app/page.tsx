@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import Desktop from "../components/Desktop"
-import { FileSystemProvider } from "../contexts/FileSystemContext"
 import { initialWindowSize } from "@/components/Window"
 import { PortfolioProvider } from "@/contexts/PortfolioContext"
 
