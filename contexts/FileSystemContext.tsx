@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState } from "react"
+import React, { createContext, use, useState } from "react"
 import {
   searchUser as searchUserAction,
   signIn as signInAction,
@@ -18,22 +18,16 @@ import {
 
 export type FileSystemContextType = {
   currentDirectory: string
+  setCurrentDirectory: React.Dispatch<React.SetStateAction<string>>
   executeCommand: (command: string) => Promise<string[]>
   getFullPath: (filename: string) => string
   currentUser: string | null
   setCurrentUser: (username: string | null) => void
-  handleAuthInput: (input: string) => Promise<string[]>
-  isAuthMode: boolean
-  setIsAuthMode: (mode: boolean) => void
-  authStep: number
-  setAuthStep: (step: number) => void
-  authType: "signin" | "signup" | null
-  setAuthType: (type: "signin" | "signup" | null) => void
   searching: string | null
+  editMode: { filename: string; content: string } | null
   setEditMode: React.Dispatch<
     React.SetStateAction<{ filename: string; content: string } | null>
   >
-  editMode: { filename: string; content: string } | null
 }
 
 export const FileSystemContext = createContext<
@@ -41,7 +35,7 @@ export const FileSystemContext = createContext<
 >(undefined)
 
 export const useFileSystem = () => {
-  const context = useContext(FileSystemContext)
+  const context = use(FileSystemContext)
   if (!context) {
     throw new Error("useFileSystem must be used within a FileSystemProvider")
   }
@@ -53,19 +47,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [currentDirectory, setCurrentDirectory] = useState("/")
   const [currentUser, setCurrentUser] = useState<string | null>(null)
-  const [isAuthMode, setIsAuthMode] = useState(false)
-  const [authStep, setAuthStep] = useState(0)
-  const [authType, setAuthType] = useState<"signin" | "signup" | null>(null)
-  const [authData, setAuthData] = useState({
-    username: "",
-    email: "",
-    password: "",
-  })
+  const [searching, setSearching] = useState<string | null>(null)
   const [editMode, setEditMode] = useState<{
     filename: string
     content: string
   } | null>(null)
-  const [searching, setSearching] = useState<string | null>(null)
 
   const executeCommand = async (command: string): Promise<string[]> => {
     const [cmd, ...args] = command
@@ -105,86 +91,34 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       // case "chmod":
       //   return [changePermissions(args[0], args[1])]
       case "signup":
-        return signUp()
+        return await signUp(args[0], args[1])
       case "signin":
-        return signIn()
+        return await signIn(args[0], args[1])
       case "signout":
         return signOut()
       case "search":
         return await searchUserAction(args[0])
       case "seturl":
         return [await setFileUrl(args[0], args[1])]
+      case "portfolio":
+        return userPortfolio()
       default:
-        return [`Command not found: ${cmd}`]
+        return [`Error: Command not found: ${cmd}`]
     }
   }
 
-  const handleAuthInput = async (input: string): Promise<string[]> => {
-    if (authType === "signup") {
-      if (authStep === 0) {
-        setAuthData({ ...authData, username: input.toLocaleLowerCase() })
-        setAuthStep(1)
-        return ["Username: " + input]
-      } else if (authStep === 1) {
-        setAuthData({ ...authData, email: input.toLocaleLowerCase() })
-        setAuthStep(2)
-        return ["Email: " + input]
-      } else if (authStep === 2) {
-        setAuthData({ ...authData, password: input })
-        setAuthStep(0)
-        setIsAuthMode(false)
-        setAuthType(null)
-
-        setSearching("Creating your account")
-        const { success, message } = await signUpAction(
-          authData.username,
-          authData.email,
-          input
-        )
-        setSearching(null)
-        if (success) {
-          setCurrentUser(authData.username)
-          setCurrentDirectory(`/${authData.username}`)
-          return [`Signup successful. Welcome, ${authData.username}!`]
-        } else {
-          return ["Signup failed: " + message]
-        }
-      }
-    } else if (authType === "signin") {
-      if (authStep === 0) {
-        setAuthData({ ...authData, email: input.toLocaleLowerCase() })
-        setAuthStep(1)
-        return ["Email: " + input]
-      } else if (authStep === 1) {
-        setAuthData({ ...authData, password: input })
-        setAuthStep(0)
-        setIsAuthMode(false)
-        setAuthType(null)
-
-        const identifier = authData.email ?? authData.username
-        const password = input
-
-        setSearching("Authenticating")
-        const { success, content } = await signInAction(identifier, password)
-        setSearching(null)
-
-        if (success) {
-          const username = content
-          setCurrentUser(username)
-          setCurrentDirectory(`/${username}`)
-          return [`Login successful. Welcome back, ${username}!`]
-        } else {
-          return [content]
-        }
-      }
-    }
-    return []
+  const userPortfolio = (): string[] => {
+    if (!currentUser) return ["Signin to view your portfolio"]
+    setCurrentDirectory(`${currentUser}@portfolio`)
+    return [
+      "Entering portfolio environment. Type 'help' for available commands.",
+    ]
   }
 
   const listDirectory = async (): Promise<string[]> => {
     if (!currentUser) return ["Signin to list items"]
     if (currentDirectory) {
-      const list = await listDirectoryAction(currentUser!, currentDirectory)
+      const list = await listDirectoryAction(currentUser, currentDirectory)
       return list
     }
 
@@ -192,26 +126,52 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
   }
 
   const changeDirectory = async (path: string): Promise<string> => {
+    if (!currentUser) return "Signin to change directory"
     if (!path) return "Error: No directory specified"
     if (currentDirectory) {
-      if (path === ".." && currentDirectory === "/") {
-        return "Error: Cannot go back from root"
-      } else if (path === ".." && currentDirectory === `/${currentUser}`) {
-        return "Error: Cannot go back from home directory without signing out"
-      } else if (path === "..") {
-        const newPath = currentDirectory.split("/").slice(0, -1).join("/")
+      if (path.startsWith("..")) {
+        // Early exit for root and home directory
+        if (currentDirectory === "/") {
+          return "Error: Cannot go back from root"
+        }
+        if (currentDirectory === `/${currentUser}`) {
+          return "Error: Cannot go back from home directory without signing out"
+        }
+
+        // Validate the path format
+        const parts = path.split("/").filter(Boolean)
+        if (!parts.every((part) => part === "..")) {
+          return "Error: Invalid path format. Must only contain '..'"
+        }
+
+        // Calculate new path
+        const currentParts = currentDirectory.split("/").filter(Boolean)
+        const levelsUp = parts.length
+
+        if (levelsUp > currentParts.length) {
+          return "Error: Cannot go back beyond root directory"
+        }
+
+        const newPath = "/" + currentParts.slice(0, -levelsUp).join("/")
+
+        // Final safety check for protected directories
+        if (newPath === "/") {
+          return "Error: Cannot go back beyond root directory"
+        }
+
         setCurrentDirectory(newPath)
         return ""
       }
 
-      const { success, content } = await changeDirectoryAction(
-        currentUser!,
-        currentDirectory,
-        path
+      const newPath = `${currentDirectory}/${path}`.replace(/\/+/g, "/")
+
+      const { success, message } = await changeDirectoryAction(
+        currentUser,
+        newPath
       )
 
-      if (!success) return content
-      setCurrentDirectory(content)
+      if (!success) return message
+      setCurrentDirectory(message)
       return ""
     }
 
@@ -236,7 +196,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (currentDirectory) {
       const message = await readFileContentAction(
-        currentUser!,
+        currentUser,
         currentDirectory,
         filename
       )
@@ -249,7 +209,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!currentUser) return "Signin to remove directory"
     if (!filename) return "Error: No directory specified"
     return removeNodeAction(
-      currentUser!,
+      currentUser,
       currentDirectory,
       filename,
       "directory"
@@ -259,7 +219,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
   const removeFile = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to remove file"
     if (!filename) return "Error: No file specified"
-    return removeNodeAction(currentUser!, currentDirectory, filename, "file")
+    return removeNodeAction(currentUser, currentDirectory, filename, "file")
   }
 
   const renameFileOrDirectory = async (
@@ -300,7 +260,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       return "Error: Destination path cannot be the source path"
     }
 
-    const destinationPath = destination.startsWith("/")
+    const destinationPath = destination.startsWith(`/${currentUser}`)
       ? destination
       : `${currentDirectory}/${destination}`.replace(/\/+/g, "/")
 
@@ -320,10 +280,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
   const helpCommand = (): string[] => {
     const commands = [
       // Account-related commands
-      ["signup", "Create a new user account"],
-      ["signin", "Sign in to your account"],
+      ["search [username]", "Search for a user portfolio"],
+      ["signup [username] [password]", "Create a new user account"],
+      ["signin [username] [password]", "Sign in to your account"],
       ["signout", "Sign out of your account"],
-      ["search [username]", "Search for a user"],
+      ["portfolio", "View and edit your portfolio"],
 
       // Basic file and directory commands
       ["ls", "List directory contents"],
@@ -369,16 +330,16 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!currentUser) return ["Signin to edit file"]
     if (!filename) return ["Error: No file specified"]
     if (currentDirectory) {
-      const { success, content } = await editFileContentAction(
-        currentUser!,
+      const { success, message } = await editFileContentAction(
+        currentUser,
         currentDirectory,
         filename
       )
       if (success) {
-        setEditMode({ filename, content })
+        setEditMode({ filename, content: message })
         return [`EDIT_MODE:${filename}`]
       } else {
-        return [`Error: ${content}`]
+        return [`Error: ${message}`]
       }
     }
 
@@ -400,31 +361,57 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     return result
   }
 
-  const signUp = (): string[] => {
+  const signUp = async (
+    username: string,
+    password: string
+  ): Promise<string[]> => {
+    if (!username.trim() || !password.trim()) {
+      return ["Error: Login failed: username and password are required"]
+    }
     if (currentUser) {
       return [
         "Error: You are already signed in!",
         "Sign out to create a new account",
       ]
     } else {
-      setIsAuthMode(true)
-      setAuthType("signup")
-      setAuthStep(0)
-      return [""]
+      setSearching("Creating your account")
+      const { success, message } = await signUpAction(username, password)
+      setSearching(null)
+      if (success) {
+        setCurrentUser(username)
+        setCurrentDirectory(`/${username}`)
+        return [`Signup successful. Welcome, ${username}!`]
+      } else {
+        return ["Signup failed: " + message]
+      }
     }
   }
 
-  const signIn = (): string[] => {
+  const signIn = async (
+    username: string,
+    password: string
+  ): Promise<string[]> => {
+    if (!username || !password) {
+      return ["Error: Login failed: username and password are required"]
+    }
     if (currentUser) {
       return [
         "Error: You are already signed in!",
         "Sign out to sign in with a different account",
       ]
     } else {
-      setIsAuthMode(true)
-      setAuthType("signin")
-      setAuthStep(0)
-      return [""]
+      setSearching("Authenticating")
+      const { success, message } = await signInAction(username, password)
+      setSearching(null)
+
+      if (success) {
+        // const username = content
+        setCurrentUser(username)
+        setCurrentDirectory(`/${username}`)
+        return [`Login successful. Welcome back, ${username}!`]
+      } else {
+        return [message]
+      }
     }
   }
 
@@ -442,17 +429,11 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     <FileSystemContext.Provider
       value={{
         currentDirectory,
+        setCurrentDirectory,
         executeCommand,
         getFullPath,
         currentUser,
         setCurrentUser,
-        handleAuthInput,
-        isAuthMode,
-        setIsAuthMode,
-        authStep,
-        setAuthStep,
-        authType,
-        setAuthType,
         searching,
         setEditMode,
         editMode,

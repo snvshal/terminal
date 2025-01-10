@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import Desktop from "../components/Desktop"
 import { FileSystemProvider } from "../contexts/FileSystemContext"
 import { initialWindowSize } from "@/components/Window"
+import { PortfolioProvider } from "@/contexts/PortfolioContext"
 
 const Terminal = dynamic(() => import("../components/Terminal"), { ssr: false })
 
@@ -89,7 +90,9 @@ function HomeContent() {
 export default function Home() {
   return (
     <FileSystemProvider>
-      <HomeContent />
+      <PortfolioProvider>
+        <HomeContent />
+      </PortfolioProvider>
     </FileSystemProvider>
   )
 }

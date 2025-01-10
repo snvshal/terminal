@@ -1,9 +1,11 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useContext } from "react"
-import { FileSystemContext } from "../contexts/FileSystemContext"
-import Window from "./Window"
+import React, { useState, useRef, useEffect } from "react"
+import { useFileSystem } from "../contexts/FileSystemContext"
+import { usePortfolio } from "@/contexts/PortfolioContext"
 import { updateFileContent as updateFileContentAction } from "@/app/actions"
+import { cn } from "@/lib/utils"
+import Window from "./Window"
 
 export type TerminalProps = {
   initialPosition: { x: number; y: number }
@@ -27,14 +29,11 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
     currentDirectory,
     executeCommand,
     currentUser,
-    handleAuthInput,
-    isAuthMode,
-    authStep,
-    authType,
     searching,
     setEditMode,
     editMode,
-  } = useContext(FileSystemContext)!
+  } = useFileSystem()
+  const { executePortfolioCommand } = usePortfolio()
 
   useEffect(() => {
     if (outputRef.current) {
@@ -48,27 +47,33 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
   const handleInputSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (input.trim() && !isExecuting) {
       setIsExecuting(true)
-      if (!isAuthMode) {
-        setOutput((prev) => [...prev, `${currentDirectory}$ ${input}`])
-        setCommandHistory([...commandHistory, input])
-        setHistoryIndex(-1)
-      }
+      setOutput((prev) => [...prev, `cmd://${currentDirectory} $ ${input}`])
+      setCommandHistory([...commandHistory, input])
+      setHistoryIndex(-1)
 
       try {
-        let result: string[]
-        if (isAuthMode) {
-          result = await handleAuthInput(input)
+        if (currentDirectory === `${currentUser}@portfolio`) {
+          const result = await executePortfolioCommand(input)
+          for (const line of result) {
+            if (line === "clear") {
+              setOutput([])
+            } else {
+              await new Promise((resolve) => setTimeout(resolve, 10))
+              setOutput((prev) => [...prev, line])
+            }
+          }
         } else {
-          result = await executeCommand(input)
-        }
-        for (const line of result) {
-          if (line === "clear") {
-            setOutput([])
-          } else {
-            await new Promise((resolve) => setTimeout(resolve, 10))
-            setOutput((prev) => [...prev, line])
+          const result = await executeCommand(input)
+          for (const line of result) {
+            if (line === "clear") {
+              setOutput([])
+            } else {
+              await new Promise((resolve) => setTimeout(resolve, 10))
+              setOutput((prev) => [...prev, line])
+            }
           }
         }
       } catch (error) {
@@ -85,8 +90,6 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isAuthMode) return
-
     if (e.key === "ArrowUp") {
       e.preventDefault()
       if (historyIndex < commandHistory.length - 1) {
@@ -160,7 +163,11 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       )
     }
 
-    return <span>{line}</span>
+    return (
+      <span>
+        {line.startsWith("cmd://") ? line.replace("cmd://", "") : line}
+      </span>
+    )
   }
 
   return (
@@ -176,9 +183,11 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
         {output.map((line, index) => (
           <div
             key={index}
-            className={`whitespace-pre ${
-              line.startsWith("Error:") ? "text-red-500" : ""
-            }`}
+            className={cn(
+              "whitespace-pre",
+              line.startsWith("Error:") && "text-red-500"
+              // line.startsWith("cmd://") && "mb-2"
+            )}
           >
             {renderLine(line)}
           </div>
@@ -203,30 +212,11 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
         ) : !searching ? (
           !isExecuting && (
             <div className="flex items-center whitespace-pre">
-              <span>
-                {isAuthMode
-                  ? authType === "signup"
-                    ? authStep === 0
-                      ? "Enter username: "
-                      : authStep === 1
-                      ? "Enter email: "
-                      : "Enter password: "
-                    : authStep === 0
-                    ? "Enter email/username: "
-                    : "Enter password: "
-                  : `${currentDirectory}$ `}
-              </span>
+              <span>{`${currentDirectory} $ `}</span>
               <form onSubmit={handleInputSubmit} className="flex-grow">
                 <input
                   ref={inputRef}
                   name="command"
-                  type={
-                    isAuthMode &&
-                    ((authType === "signup" && authStep === 2) ||
-                      (authType === "signin" && authStep === 1))
-                      ? "password"
-                      : "text"
-                  }
                   value={input}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
