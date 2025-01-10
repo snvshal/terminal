@@ -11,7 +11,7 @@ const encodedKey = new TextEncoder().encode(secretKey)
 
 type SessionPayload = JWTPayload & { username: string }
 
-export async function encrypt(payload: SessionPayload) {
+export const encrypt = async (payload: SessionPayload): Promise<string> => {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -19,9 +19,9 @@ export async function encrypt(payload: SessionPayload) {
     .sign(encodedKey)
 }
 
-export async function decrypt(
+export const decrypt = async (
   session: string | undefined = ""
-): Promise<SessionPayload | null> {
+): Promise<SessionPayload | null> => {
   if (!session) return null
 
   try {
@@ -46,7 +46,7 @@ export async function decrypt(
   }
 }
 
-export async function createSession(username: string) {
+export const createSession = async (username: string): Promise<void> => {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   const session = await encrypt({ username, expiresAt })
   const cookieStore = await cookies()
@@ -60,21 +60,23 @@ export async function createSession(username: string) {
   })
 }
 
-export async function deleteSession() {
+export const deleteSession = async (): Promise<void> => {
   const cookieStore = await cookies()
   cookieStore.delete("session")
 }
 
-export const verifySession = cache(async () => {
-  const cookie = (await cookies()).get("session")?.value
-  const session = await decrypt(cookie)
+export const verifySession = cache(
+  async (): Promise<{ username: string } | null> => {
+    const cookie = (await cookies()).get("session")?.value
+    const session = await decrypt(cookie)
 
-  if (!session?.username) return null
+    if (!session?.username) return null
 
-  return { username: session.username as string }
-})
+    return { username: session.username as string }
+  }
+)
 
-export const getUsername = cache(async () => {
+export const getUsername = cache(async (): Promise<string | null> => {
   const session = await verifySession()
   if (!session) return null
   return session.username
