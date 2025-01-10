@@ -14,6 +14,110 @@ import {
   Portfolio,
 } from "@/types/schema"
 import { PortfolioSchema, UserProfileSchema } from "@/lib/zod"
+import { createSession, deleteSession } from "@/lib/session"
+
+export const signUp = async (
+  username: string,
+  password: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const validationResult = UserProfileSchema.safeParse({
+      username,
+      password,
+      data: { directories: [], files: [], urls: [] },
+      portfolio: {
+        name: username,
+        title: `${username}'s Portfolio`,
+        bio: "Welcome to my portfolio!",
+        socialLinks: [],
+        skills: [],
+        projects: [],
+        experiences: [],
+      },
+    })
+
+    if (!validationResult.success) {
+      return { success: false, message: "Invalid user data" }
+    }
+
+    await dbConnect()
+
+    const existingUser = await User.findOne({ username })
+    if (existingUser) {
+      return { success: false, message: "Username already taken" }
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    await User.create({
+      ...validationResult.data,
+      password: hashedPassword,
+    })
+
+    await createSession(username)
+
+    return { success: true, message: "Your account has been created" }
+  } catch (error) {
+    console.error("Error during sign up:", error)
+    return { success: false, message: "An error occurred during sign up" }
+  }
+}
+
+export const signIn = async (
+  username: string,
+  password: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    await dbConnect()
+
+    const user = await User.findOne({ username })
+
+    if (!user) {
+      return {
+        success: false,
+        message: "Login failed: user not found",
+      }
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (!isPasswordValid) {
+      return { success: false, message: "Login failed: invalid password" }
+    }
+
+    await createSession(username)
+
+    return { success: true, message: user.username }
+  } catch (error) {
+    console.error("Error during sign in:", error)
+    return { success: false, message: "Login failed: error during sign in" }
+  }
+}
+
+export const signOut = async (): Promise<{
+  success: boolean
+  message: string
+}> => {
+  try {
+    await deleteSession()
+    return { success: true, message: "You have been signed out!" }
+  } catch (error) {
+    console.error("Error during sign out:", error)
+    return { success: false, message: "An error occurred during sign out" }
+  }
+}
+
+export const getUserByUsername = async (
+  username: string
+): Promise<UserProfile | null> => {
+  try {
+    await dbConnect()
+    const user: UserProfile | null = await User.findOne({ username })
+    return user
+  } catch (error) {
+    console.error("Error in getUserByUsername:", error)
+    return null
+  }
+}
 
 export async function calculateSize(data: FileSystemNode): Promise<number> {
   try {
@@ -70,101 +174,18 @@ export async function searchUser(username: string) {
     const user = await getUserByUsername(username)
     if (!user) return ["Error: User not found: " + username]
 
+    const portfolio = user.portfolio
     return [
-      "Username: " + user.username,
-      // "Name: " + user.name,
-      // "Email: " + user.email,
-      // "About: " + JSON.stringify(user.data)
+      "Portfolio Overview:",
+      `Name: ${portfolio.name}`,
+      `Title: ${portfolio.title}`,
+      `Bio: ${portfolio.bio}`,
+      `Email: ${portfolio.email || "Not set"}`,
+      `Avatar: ${portfolio.avatar || "Not set"}`,
     ]
   } catch (error) {
     console.error("Error searching for user:", error)
     return ["An error occurred while searching for the user"]
-  }
-}
-
-export const signUp = async (
-  username: string,
-  password: string
-): Promise<{ success: boolean; message: string }> => {
-  try {
-    const validationResult = UserProfileSchema.safeParse({
-      username,
-      password,
-      data: { directories: [], files: [], urls: [] },
-      portfolio: {
-        name: username,
-        title: `${username}'s Portfolio`,
-        bio: "Welcome to my portfolio!",
-        socialLinks: [],
-        skills: [],
-        projects: [],
-        experiences: [],
-      },
-    })
-
-    if (!validationResult.success) {
-      return { success: false, message: "Invalid user data" }
-    }
-
-    await dbConnect()
-
-    const existingUser = await User.findOne({ username })
-    if (existingUser) {
-      return { success: false, message: "Username already taken" }
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    await User.create({
-      ...validationResult.data,
-      password: hashedPassword,
-    })
-
-    return { success: true, message: "Your account has been created" }
-  } catch (error) {
-    console.error("Error during sign up:", error)
-    return { success: false, message: "An error occurred during sign up" }
-  }
-}
-
-export const signIn = async (
-  username: string,
-  password: string
-): Promise<{ success: boolean; message: string }> => {
-  try {
-    await dbConnect()
-
-    const user = await User.findOne({ username })
-
-    if (!user) {
-      return {
-        success: false,
-        message: "Login failed: user not found",
-      }
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password)
-    if (!isPasswordValid) {
-      return { success: false, message: "Login failed: invalid password" }
-    }
-
-    return { success: true, message: user.username }
-  } catch (error) {
-    console.error("Error during sign in:", error)
-    return { success: false, message: "Login failed: error during sign in" }
-  }
-}
-
-export const getUserByUsername = async (
-  username: string
-): Promise<UserProfile | null> => {
-  try {
-    await dbConnect()
-    const user: UserProfile | null = await User.findOne({ username })
-    return user
-  } catch (error) {
-    console.error("Error in getUserByUsername:", error)
-    return null
   }
 }
 

@@ -1,10 +1,11 @@
 "use client"
 
-import React, { createContext, use, useState } from "react"
+import React, { createContext, use, useEffect, useState } from "react"
 import {
   searchUser as searchUserAction,
   signIn as signInAction,
   signUp as signUpAction,
+  signOut as signOutAction,
   createNode as createNodeAction,
   listDirectory as listDirectoryAction,
   changeDirectory as changeDirectoryAction,
@@ -42,9 +43,10 @@ export const useFileSystem = () => {
   return context
 }
 
-export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const FileSystemProvider: React.FC<{
+  children: React.ReactNode
+  username: string | null
+}> = ({ children, username }) => {
   const [currentDirectory, setCurrentDirectory] = useState("/")
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [searching, setSearching] = useState<string | null>(null)
@@ -52,6 +54,13 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     filename: string
     content: string
   } | null>(null)
+
+  useEffect(() => {
+    if (username && !currentUser) {
+      setCurrentUser(username as string)
+      setCurrentDirectory(`/${username}`)
+    }
+  }, [username])
 
   const executeCommand = async (command: string): Promise<string[]> => {
     const [cmd, ...args] = command
@@ -72,7 +81,7 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       case "open":
         return [await readFileContent(args[0])]
       case "edit":
-        return await editFileContent(args[0])
+        return [await editFileContent(args[0])]
       case "rmdir":
         return [await removeDirectory(args[0])]
       case "rm":
@@ -95,24 +104,22 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       case "signin":
         return await signIn(args[0], args[1])
       case "signout":
-        return signOut()
+        return await signOut()
       case "search":
         return await searchUserAction(args[0])
       case "seturl":
         return [await setFileUrl(args[0], args[1])]
       case "portfolio":
-        return userPortfolio()
+        return [userPortfolio()]
       default:
         return [`Error: Command not found: ${cmd}`]
     }
   }
 
-  const userPortfolio = (): string[] => {
-    if (!currentUser) return ["Signin to view your portfolio"]
+  const userPortfolio = (): string => {
+    if (!currentUser) return "Signin to view your portfolio"
     setCurrentDirectory(`${currentUser}@portfolio`)
-    return [
-      "Entering portfolio environment. Type 'help' for available commands.",
-    ]
+    return "Entering portfolio environment. Type 'help' for available commands."
   }
 
   const listDirectory = async (): Promise<string[]> => {
@@ -326,9 +333,9 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     return `${currentDirectory}/${filename}`.replace(/\/+/g, "/")
   }
 
-  const editFileContent = async (filename: string): Promise<string[]> => {
-    if (!currentUser) return ["Signin to edit file"]
-    if (!filename) return ["Error: No file specified"]
+  const editFileContent = async (filename: string): Promise<string> => {
+    if (!currentUser) return "Signin to edit file"
+    if (!filename) return "Error: No file specified"
     if (currentDirectory) {
       const { success, message } = await editFileContentAction(
         currentUser,
@@ -337,13 +344,13 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
       )
       if (success) {
         setEditMode({ filename, content: message })
-        return [`EDIT_MODE:${filename}`]
+        return `EDIT_MODE:${filename}`
       } else {
-        return [`Error: ${message}`]
+        return `Error: ${message}`
       }
     }
 
-    return [`Error: File not found`]
+    return "Error: File not found"
   }
 
   const setFileUrl = async (filename: string, url: string): Promise<string> => {
@@ -415,13 +422,17 @@ export const FileSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }
 
-  const signOut = (): string[] => {
+  const signOut = async (): Promise<string[]> => {
     if (!currentUser) {
       return ["Error: You are not signed in!"]
     } else {
-      setCurrentUser(null)
-      setCurrentDirectory("/")
-      return ["You have been signed out"]
+      const { success, message } = await signOutAction()
+      if (success) {
+        setCurrentUser(null)
+        setCurrentDirectory("/")
+      }
+
+      return [message]
     }
   }
 

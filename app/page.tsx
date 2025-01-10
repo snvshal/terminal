@@ -89,10 +89,8 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <FileSystemProvider>
-      <PortfolioProvider>
-        <HomeContent />
-      </PortfolioProvider>
-    </FileSystemProvider>
+    <PortfolioProvider>
+      <HomeContent />
+    </PortfolioProvider>
   )
 }
