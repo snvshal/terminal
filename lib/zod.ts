@@ -1,0 +1,76 @@
+import { z } from "zod"
+
+export const DirectoryItemSchema = z.object({
+  name: z.string(),
+  location: z.string(),
+  size: z.number(),
+  lastModified: z.date(),
+})
+
+export const FileItemSchema = z.object({
+  name: z.string(),
+  location: z.string(),
+  content: z.string(),
+  size: z.number(),
+  lastModified: z.date(),
+})
+
+export const UrlItemSchema = z.object({
+  name: z.string(),
+  location: z.string(),
+  url: z.string().url(),
+  size: z.number(),
+  lastModified: z.date(),
+})
+
+export const UserDataSchema = z.object({
+  directories: z.array(DirectoryItemSchema),
+  files: z.array(FileItemSchema),
+  urls: z.array(UrlItemSchema),
+})
+
+export const SocialLinkSchema = z.object({
+  platform: z.string(),
+  url: z.string().url(),
+  icon: z.string().optional(),
+})
+
+export const ProjectSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  technologies: z.array(z.string()),
+  link: z.string().url().optional(),
+  image: z.string().optional(),
+})
+
+export const ExperienceSchema = z.object({
+  company: z.string(),
+  role: z.string(),
+  startDate: z.date(),
+  endDate: z.date().optional(),
+  description: z.string(),
+})
+
+export const SkillSchema = z.object({
+  name: z.string(),
+  level: z.string().optional(),
+})
+
+export const PortfolioSchema = z.object({
+  name: z.string(),
+  title: z.string(),
+  bio: z.string(),
+  avatar: z.string().optional(),
+  email: z.string().email().optional(),
+  socialLinks: z.array(SocialLinkSchema),
+  skills: z.array(SkillSchema),
+  projects: z.array(ProjectSchema),
+  experiences: z.array(ExperienceSchema),
+})
+
+export const UserProfileSchema = z.object({
+  username: z.string(),
+  password: z.string(),
+  data: UserDataSchema,
+  portfolio: PortfolioSchema,
+})

@@ -20,7 +20,7 @@ const WindowHeader: React.FC<WindowHeaderProps> = ({
   onMouseDown,
 }) => (
   <div
-    className="bg-zinc-800 px-4 py-2 flex justify-between items-center cursor-grab active:cursor-grabbing"
+    className="bg-zinc-800 selection:bg-transparent px-4 py-2 flex justify-between items-center cursor-grab active:cursor-grabbing"
     onMouseDown={onMouseDown}
   >
     <div className="group flex space-x-2.5">
@@ -253,7 +253,9 @@ const Window: React.FC<WindowProps> = ({
           toggleFullScreen={toggleFullScreen}
           onMouseDown={(e) => handleMouseDown(e, "drag")}
         />
-        <div className="h-[calc(100%-2.5rem)] overflow-auto">{children}</div>
+        <div className="h-[calc(100%-2.5rem)] selection:bg-gray-500 overflow-auto">
+          {children}
+        </div>
         {!(position.x <= 0 && position.y <= 0) && (
           <ResizeHandles
             onMouseDown={(e, direction) =>
