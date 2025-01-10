@@ -93,11 +93,13 @@ export const PortfolioProvider: React.FC<{
     if (!section) {
       return [
         "Portfolio Overview:",
-        `Name: ${portfolio.name}`,
-        `Title: ${portfolio.title}`,
-        `Bio: ${portfolio.bio}`,
-        `Email: ${portfolio.email || "Not set"}`,
-        `Avatar: ${portfolio.avatar || "Not set"}`,
+        "                                                   ",
+        `Name         ${portfolio.name}`,
+        `Title        ${portfolio.title}`,
+        `Bio          ${portfolio.bio}`,
+        `Email        ${portfolio.email || "Not set"}`,
+        `Avatar       ${portfolio.avatar || "Not set"}`,
+        "                                                   ",
         "Use 'view <section>' to see details of skills, projects, experiences, or social links.",
       ]
     }

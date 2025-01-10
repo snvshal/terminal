@@ -50,7 +50,10 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
     if (input.trim() && !isExecuting) {
       setIsExecuting(true)
-      setOutput((prev) => [...prev, `cmd://${currentDirectory} $ ${input}`])
+      setOutput((prev) => [
+        ...prev,
+        `cmd://${currentUser}@${currentDirectory} $ ${input}`,
+      ])
       setCommandHistory([...commandHistory, input])
       setHistoryIndex(-1)
 
@@ -186,7 +189,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
             className={cn(
               "whitespace-pre",
               line.startsWith("Error:") && "text-red-500"
-              // line.startsWith("cmd://") && "mb-2"
+              // line.startsWith("cmd://") && "my-2"
             )}
           >
             {renderLine(line)}
@@ -212,7 +215,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
         ) : !searching ? (
           !isExecuting && (
             <div className="flex items-center whitespace-pre">
-              <span>{`${currentDirectory} $ `}</span>
+              <span>{`${currentUser}@${currentDirectory} $ `}</span>
               <form onSubmit={handleInputSubmit} className="flex-grow">
                 <input
                   ref={inputRef}

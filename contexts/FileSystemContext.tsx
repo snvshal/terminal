@@ -285,14 +285,7 @@ export const FileSystemProvider: React.FC<{
   }
 
   const helpCommand = (): string[] => {
-    const commands = [
-      // Account-related commands
-      ["search [username]", "Search for a user portfolio"],
-      ["signup [username] [password]", "Create a new user account"],
-      ["signin [username] [password]", "Sign in to your account"],
-      ["signout", "Sign out of your account"],
-      ["portfolio", "View and edit your portfolio"],
-
+    const commands: [string, string][] = [
       // Basic file and directory commands
       ["ls", "List directory contents"],
       ["pwd", "Print working directory"],
@@ -311,6 +304,13 @@ export const FileSystemProvider: React.FC<{
       // Utility commands
       ["clear/cls", "Clear the terminal screen"],
       ["help", "Display this help message"],
+
+      // Account-related commands
+      //  ["search [username]", "Search for a user portfolio"],
+      ["signup [username] [password]", "Create a new user account"],
+      ["signin [username] [password]", "Sign in to your account"],
+      ["signout", "Sign out of your account"],
+      ["portfolio", "View and edit your portfolio"],
     ]
 
     const output = [

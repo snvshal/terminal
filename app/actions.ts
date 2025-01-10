@@ -172,16 +172,18 @@ export async function searchUser(username: string) {
     if (!username) return ["Error: Please provide a username"]
 
     const user = await getUserByUsername(username)
-    if (!user) return ["Error: User not found: " + username]
+    if (!user) return [`User not found: '${username}'`]
 
     const portfolio = user.portfolio
     return [
-      "Portfolio Overview:",
-      `Name: ${portfolio.name}`,
-      `Title: ${portfolio.title}`,
-      `Bio: ${portfolio.bio}`,
-      `Email: ${portfolio.email || "Not set"}`,
-      `Avatar: ${portfolio.avatar || "Not set"}`,
+      `Portfolio Overview of ${username}:`,
+      "                                                   ",
+      `Name         ${portfolio.name}`,
+      `Title        ${portfolio.title}`,
+      `Bio          ${portfolio.bio}`,
+      `Email        ${portfolio.email || "Not set"}`,
+      `Avatar       ${portfolio.avatar || "Not set"}`,
+      "                                                   ",
     ]
   } catch (error) {
     console.error("Error searching for user:", error)
