@@ -25,8 +25,10 @@ export type FileSystemContextType = {
   currentUser: string | null
   setCurrentUser: (username: string | null) => void
   searching: string | null
-  editMode: { filename: string; content: string } | null
-  setEditMode: React.Dispatch<
+  openNotepad: boolean
+  setOpenNotepad: React.Dispatch<React.SetStateAction<boolean>>
+  editFile: { filename: string; content: string } | null
+  setEditFile: React.Dispatch<
     React.SetStateAction<{ filename: string; content: string } | null>
   >
 }
@@ -50,7 +52,8 @@ export const FileSystemProvider: React.FC<{
   const [currentDirectory, setCurrentDirectory] = useState("/")
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [searching, setSearching] = useState<string | null>(null)
-  const [editMode, setEditMode] = useState<{
+  const [openNotepad, setOpenNotepad] = useState<boolean>(false)
+  const [editFile, setEditFile] = useState<{
     filename: string
     content: string
   } | null>(null)
@@ -174,7 +177,7 @@ export const FileSystemProvider: React.FC<{
 
       const { success, message } = await changeDirectoryAction(
         currentUser,
-        newPath
+        newPath,
       )
 
       if (!success) return message
@@ -205,7 +208,7 @@ export const FileSystemProvider: React.FC<{
       const message = await readFileContentAction(
         currentUser,
         currentDirectory,
-        filename
+        filename,
       )
       return message
     }
@@ -219,7 +222,7 @@ export const FileSystemProvider: React.FC<{
       currentUser,
       currentDirectory,
       filename,
-      "directory"
+      "directory",
     )
   }
 
@@ -231,7 +234,7 @@ export const FileSystemProvider: React.FC<{
 
   const renameFileOrDirectory = async (
     oldName: string,
-    newName: string
+    newName: string,
   ): Promise<string> => {
     if (!currentUser) return "Signin to rename file/directory"
     if (!oldName || !newName)
@@ -245,7 +248,7 @@ export const FileSystemProvider: React.FC<{
       currentUser,
       currentDirectory,
       oldName,
-      newName
+      newName,
     )
 
     return message
@@ -257,7 +260,7 @@ export const FileSystemProvider: React.FC<{
 
   const moveFileOrDirectory = async (
     name: string,
-    destination: string
+    destination: string,
   ): Promise<string> => {
     if (!currentUser) return "Signin to move file/directory"
     if (!name || !destination)
@@ -279,7 +282,7 @@ export const FileSystemProvider: React.FC<{
       currentUser,
       currentDirectory,
       name,
-      destinationPath
+      destinationPath,
     )
     return message
   }
@@ -336,14 +339,16 @@ export const FileSystemProvider: React.FC<{
   const editFileContent = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to edit file"
     if (!filename) return "Error: No file specified"
+    if (openNotepad) return "Error: Notepad is already opened"
     if (currentDirectory) {
       const { success, message } = await editFileContentAction(
         currentUser,
         currentDirectory,
-        filename
+        filename,
       )
       if (success) {
-        setEditMode({ filename, content: message })
+        setOpenNotepad(true)
+        setEditFile({ filename, content: message })
         return `EDIT_MODE:${filename}`
       } else {
         return `Error: ${message}`
@@ -362,7 +367,7 @@ export const FileSystemProvider: React.FC<{
       currentUser,
       currentDirectory,
       filename,
-      url
+      url,
     )
 
     return result
@@ -370,7 +375,7 @@ export const FileSystemProvider: React.FC<{
 
   const signUp = async (
     username: string,
-    password: string
+    password: string,
   ): Promise<string[]> => {
     if (!username.trim() || !password.trim()) {
       return ["Error: Login failed: username and password are required"]
@@ -396,7 +401,7 @@ export const FileSystemProvider: React.FC<{
 
   const signIn = async (
     username: string,
-    password: string
+    password: string,
   ): Promise<string[]> => {
     if (!username || !password) {
       return ["Error: Login failed: username and password are required"]
@@ -446,8 +451,10 @@ export const FileSystemProvider: React.FC<{
         currentUser,
         setCurrentUser,
         searching,
-        setEditMode,
-        editMode,
+        openNotepad,
+        setOpenNotepad,
+        setEditFile,
+        editFile,
       }}
     >
       {children}

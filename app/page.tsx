@@ -5,8 +5,10 @@ import dynamic from "next/dynamic"
 import Desktop from "../components/Desktop"
 import { initialWindowSize } from "@/components/Window"
 import { PortfolioProvider } from "@/contexts/PortfolioContext"
+import { useFileSystem } from "@/contexts/FileSystemContext"
 
 const Terminal = dynamic(() => import("../components/Terminal"), { ssr: false })
+const Notepad = dynamic(() => import("../components/Notepad"), { ssr: false })
 
 type WindowProps = {
   id: string
@@ -20,6 +22,8 @@ function HomeContent() {
     y: number
   } | null>(null)
 
+  const { openNotepad, setOpenNotepad } = useFileSystem()
+
   useEffect(() => {
     const calculateCenter = () => {
       const x = (window.innerWidth - initialWindowSize.width) / 2
@@ -29,34 +33,45 @@ function HomeContent() {
 
     calculateCenter()
 
-    window.addEventListener("resize", calculateCenter)
-    return () => window.removeEventListener("resize", calculateCenter)
+    // window.addEventListener("resize", calculateCenter)
+    // return () => window.removeEventListener("resize", calculateCenter)
   }, [])
 
   const closeWindow = (id: string) => {
     setOpenWindows((prevWindows) =>
-      prevWindows.filter((window) => window.id !== id)
+      prevWindows.filter((window) => window.id !== id),
     )
+
+    if ((id = "notepad")) setOpenNotepad(false)
   }
 
   useEffect(() => {
     if (windowCenter) {
+      openTerminal()
+    }
+  }, [windowCenter])
+
+  useEffect(() => {
+    if (openNotepad) {
       setOpenWindows([
+        ...openWindows,
         {
-          id: "terminal",
+          id: "notepad",
           component: (
-            <Terminal
-              initialPosition={windowCenter}
-              onClose={() => closeWindow("terminal")}
+            <Notepad
+              initialPosition={{ x: 100, y: 100 }}
+              onClose={() => closeWindow("notepad")}
             />
           ),
         },
       ])
+    } else {
+      closeWindow("notepad")
     }
-  }, [windowCenter])
+  }, [openNotepad])
 
-  const handleDoubleClick = () => {
-    console.log("✨ Double clicked ✨")
+  const openTerminal = () => {
+    // console.log("✨ Double clicked ✨")
     setOpenWindows([
       {
         id: "terminal",
@@ -76,8 +91,8 @@ function HomeContent() {
         <div key={id}>{component}</div>
       ))}
       {!openWindows.length && (
-        <div className="h-screen w-full flex items-center text-muted-foreground justify-center">
-          <button onDoubleClick={handleDoubleClick} className="text-gray-500">
+        <div className="flex h-screen w-full items-center justify-center text-muted-foreground">
+          <button onDoubleClick={openTerminal} className="text-gray-500">
             Double Click
           </button>
         </div>

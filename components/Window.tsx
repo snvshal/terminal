@@ -20,25 +20,25 @@ const WindowHeader: React.FC<WindowHeaderProps> = ({
   onMouseDown,
 }) => (
   <div
-    className="bg-zinc-800 selection:bg-transparent px-4 py-2 flex justify-between items-center cursor-grab active:cursor-grabbing"
+    className="flex cursor-grab items-center justify-between bg-zinc-800 px-4 py-2 selection:bg-transparent active:cursor-grabbing"
     onMouseDown={onMouseDown}
   >
     <div className="group flex space-x-2.5">
       <button
         onClick={onClose}
-        className="group w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-red-500"
+        className="group h-3 w-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-red-500"
       />
       <button
         onClick={toggleWindowFullScreen}
-        className="w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-yellow-500"
+        className="h-3 w-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-yellow-500"
       />
       <button
         onClick={toggleFullScreen}
-        className="w-3 h-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-green-500"
+        className="h-3 w-3 rounded-full bg-gray-500 focus:outline-none group-hover:bg-green-500"
       />
     </div>
     <span className="font-semibold text-gray-500">{title}</span>
-    <span className="w-14 flex justify-end">
+    <span className="flex w-14 justify-end">
       {/* <Circle className="size-4" /> */}
     </span>
   </div>
@@ -49,23 +49,23 @@ const ResizeHandles: React.FC<{
 }> = ({ onMouseDown }) => (
   <>
     <div
-      className="absolute top-0 right-0 w-2 h-2 cursor-ne-resize"
+      className="absolute right-0 top-0 h-2 w-2 cursor-ne-resize"
       onMouseDown={(e) => onMouseDown(e, "ne")}
     ></div>
     <div
-      className="absolute bottom-0 right-0 w-2 h-2 cursor-se-resize"
+      className="absolute bottom-0 right-0 h-2 w-2 cursor-se-resize"
       onMouseDown={(e) => onMouseDown(e, "se")}
     ></div>
     <div
-      className="absolute bottom-0 left-0 w-2 h-2 cursor-sw-resize"
+      className="absolute bottom-0 left-0 h-2 w-2 cursor-sw-resize"
       onMouseDown={(e) => onMouseDown(e, "sw")}
     ></div>
     <div
-      className="absolute top-0 left-0 w-2 h-2 cursor-nw-resize"
+      className="absolute left-0 top-0 h-2 w-2 cursor-nw-resize"
       onMouseDown={(e) => onMouseDown(e, "nw")}
     ></div>
     <div
-      className="absolute top-0 left-0 right-0 h-1 cursor-n-resize"
+      className="absolute left-0 right-0 top-0 h-1 cursor-n-resize"
       onMouseDown={(e) => onMouseDown(e, "n")}
     ></div>
     <div
@@ -73,11 +73,11 @@ const ResizeHandles: React.FC<{
       onMouseDown={(e) => onMouseDown(e, "s")}
     ></div>
     <div
-      className="absolute top-0 bottom-0 left-0 w-1 cursor-w-resize"
+      className="absolute bottom-0 left-0 top-0 w-1 cursor-w-resize"
       onMouseDown={(e) => onMouseDown(e, "w")}
     ></div>
     <div
-      className="absolute top-0 bottom-0 right-0 w-1 cursor-e-resize"
+      className="absolute bottom-0 right-0 top-0 w-1 cursor-e-resize"
       onMouseDown={(e) => onMouseDown(e, "e")}
     ></div>
   </>
@@ -111,14 +111,14 @@ const Window: React.FC<WindowProps> = ({
       setPosition({
         x: Math.max(
           0,
-          Math.min(lastPosition.x, window.innerWidth - initialWindowSize.width)
+          Math.min(lastPosition.x, window.innerWidth - initialWindowSize.width),
         ),
         y: Math.max(
           0,
           Math.min(
             lastPosition.y,
-            window.innerHeight - initialWindowSize.height
-          )
+            window.innerHeight - initialWindowSize.height,
+          ),
         ),
       })
     }
@@ -199,7 +199,7 @@ const Window: React.FC<WindowProps> = ({
   const handleMouseDown = (
     e: React.MouseEvent,
     action: "drag" | "resize",
-    direction?: string
+    direction?: string,
   ) => {
     if (action === "drag") {
       setIsDragging(true)
@@ -224,7 +224,7 @@ const Window: React.FC<WindowProps> = ({
 
       <div
         ref={windowRef}
-        className="absolute bg-zinc-900 border border-zinc-700 rounded-xl shadow-lg overflow-hidden"
+        className="absolute overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-lg"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
@@ -232,15 +232,15 @@ const Window: React.FC<WindowProps> = ({
             isFullScreen
               ? window.innerWidth
               : size.width < 400
-              ? 400
-              : size.width
+                ? 400
+                : size.width
           }px`,
           height: `${
             isFullScreen
               ? window.innerHeight
               : size.height < 250
-              ? 250
-              : size.height
+                ? 250
+                : size.height
           }px`,
           borderRadius: isFullScreen ? "0" : undefined,
           transition: isDragging || isResizing ? "none" : "all 0.3s ease",
@@ -253,7 +253,7 @@ const Window: React.FC<WindowProps> = ({
           toggleFullScreen={toggleFullScreen}
           onMouseDown={(e) => handleMouseDown(e, "drag")}
         />
-        <div className="h-[calc(100%-2.5rem)] selection:bg-gray-500 overflow-auto">
+        <div className="h-[calc(100%-2.5rem)] overflow-hidden selection:bg-gray-500">
           {children}
         </div>
         {!(position.x <= 0 && position.y <= 0) && (
@@ -294,21 +294,7 @@ const GlassyBlurSkeleton: React.FC<GlassyBlurSkeletonProps> = ({
 
   return (
     <div
-      className={`
-        fixed
-        transition-all
-        duration-300
-        ease-in-out
-        bg-gradient-to-br
-        from-white/40
-        via-white/20
-        to-transparent
-        shadow-2xl
-        backdrop-filter
-        backdrop-blur-lg
-        border
-        border-white/25
-      `}
+      className={`fixed border border-white/25 bg-gradient-to-br from-white/40 via-white/20 to-transparent shadow-2xl backdrop-blur-lg backdrop-filter transition-all duration-300 ease-in-out`}
       style={{
         ...(position.y > 0
           ? {
