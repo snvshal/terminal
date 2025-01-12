@@ -14,6 +14,7 @@ import {
   removeNode as removeNodeAction,
   moveFileOrDirectory as moveFileOrDirectoryAction,
   renameFileOrDirectory as renameFileOrDirectoryAction,
+  deleteAccount as deleteAccountAction,
 } from "../app/actions"
 
 export type FileSystemContextType = {
@@ -105,6 +106,8 @@ export const FileSystemProvider: React.FC<{
         return await signIn(args[0], args[1])
       case "signout":
         return await signOut()
+      case "userdel":
+        return await deleteAccount(args[0], args[1])
       case "search":
         return await searchUserAction(args[0])
       case "seturl":
@@ -286,16 +289,17 @@ export const FileSystemProvider: React.FC<{
       ["rename [old name] [new name]", "Rename a file or directory or url"],
       // ["chmod [permissions] [file/directory]", "Change file permissions"],
 
-      // Utility commands
-      ["clear/cls", "Clear the terminal screen"],
-      ["help", "Display this help message"],
-
       // Account-related commands
       //  ["search [username]", "Search for a user portfolio"],
       ["signup [username] [password]", "Create a new user account"],
       ["signin [username] [password]", "Sign in to your account"],
       ["signout", "Sign out of your account"],
+      ["userdel [username] [password]", "Delete your account"],
       ["portfolio", "View and edit your portfolio"],
+
+      // Utility commands
+      ["clear/cls", "Clear the terminal screen"],
+      ["help", "Display this help message"],
     ]
 
     const output = [
@@ -331,7 +335,7 @@ export const FileSystemProvider: React.FC<{
       if (type === "file") {
         setOpenNotepad(true)
         setEditFile({ filename, content: message })
-        return `Open:${filename}`
+        return `Open: ${filename}`
       } else if (type === "url") {
         return `URL of ${filename}: fileurl://${message}`
       }
@@ -377,7 +381,7 @@ export const FileSystemProvider: React.FC<{
         setCurrentDirectory(`/${username}`)
         return [`Signup successful. Welcome, ${username}!`]
       } else {
-        return ["Signup failed: " + message]
+        return ["Error: Signup failed: ", ...message]
       }
     }
   }
@@ -415,6 +419,23 @@ export const FileSystemProvider: React.FC<{
       return ["Error: You are not signed in!"]
     } else {
       const { success, message } = await signOutAction()
+      if (success) {
+        setCurrentUser(null)
+        setCurrentDirectory("/")
+      }
+
+      return [message]
+    }
+  }
+
+  const deleteAccount = async (
+    username: string,
+    password: string,
+  ): Promise<string[]> => {
+    if (!currentUser) {
+      return ["Error: You are not signed in!"]
+    } else {
+      const { success, message } = await deleteAccountAction(username, password)
       if (success) {
         setCurrentUser(null)
         setCurrentDirectory("/")

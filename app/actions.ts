@@ -109,6 +109,37 @@ export const signOut = async (): Promise<{
   }
 }
 
+export const deleteAccount = async (
+  username: string,
+  password: string,
+): Promise<{
+  success: boolean
+  message: string
+}> => {
+  try {
+    const user = await getUserByUsername(username)
+
+    if (!user) return { success: false, message: "Error: User not found" }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+
+    if (!isPasswordValid) {
+      return { success: false, message: "Error: Invalid password" }
+    }
+
+    await signOut()
+    await User.deleteOne({ username })
+
+    return { success: true, message: "Account deleted successfully" }
+  } catch (error) {
+    console.error("Error deleting account:", error)
+    return {
+      success: false,
+      message: "Error: An error occurred while deleting the account",
+    }
+  }
+}
+
 export const getUserByUsername = async (
   username: string,
 ): Promise<UserProfile | null> => {
