@@ -2,7 +2,12 @@
 
 import Window from "./Window"
 import React, { useState, useEffect, useRef, useCallback } from "react"
-import { LoaderIcon, CircleDotIcon, CircleCheckIcon } from "lucide-react"
+import {
+  LoaderIcon,
+  CircleDotIcon,
+  CircleCheckIcon,
+  AlertCircleIcon,
+} from "lucide-react"
 import { useFileSystem } from "@/contexts/FileSystemContext"
 import { updateFileContent as updateFileContentAction } from "@/app/actions"
 
@@ -17,9 +22,9 @@ const Notepad: React.FC<NotepadProps> = ({ initialPosition, onClose }) => {
   const [wordCount, setWordCount] = useState(0)
   const [charCount, setCharCount] = useState(0)
   const [zoom, setZoom] = useState(100)
-  const [saveStatus, setSaveStatus] = useState<"unsaved" | "saving" | "saved">(
-    "saved",
-  )
+  const [saveStatus, setSaveStatus] = useState<
+    "unsaved" | "saving" | "saved" | "error"
+  >("saved")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { editFile, currentDirectory } = useFileSystem()
@@ -58,6 +63,7 @@ const Notepad: React.FC<NotepadProps> = ({ initialPosition, onClose }) => {
       const newContent =
         content.substring(0, start) + "  " + content.substring(end)
       setContent(newContent)
+
       // Set cursor position after tab
       setTimeout(() => {
         if (textareaRef.current) {
@@ -71,11 +77,12 @@ const Notepad: React.FC<NotepadProps> = ({ initialPosition, onClose }) => {
   const handleSave = async () => {
     if (!editFile) return null
     setSaveStatus("saving")
-    await updateFileContentAction(currentDirectory, editFile.filename, content)
-    // Simulate API call or file system operation
-    setTimeout(() => {
-      setSaveStatus("saved")
-    }, 1000)
+    const { success } = await updateFileContentAction(
+      currentDirectory,
+      editFile.filename,
+      content,
+    )
+    setSaveStatus(success ? "saved" : "error")
   }
 
   return (
@@ -93,6 +100,9 @@ const Notepad: React.FC<NotepadProps> = ({ initialPosition, onClose }) => {
           )}
           {saveStatus === "saved" && (
             <CircleCheckIcon className="h-4 w-4 text-green-500" />
+          )}
+          {saveStatus === "error" && (
+            <AlertCircleIcon className="h-4 w-4 text-red-500" />
           )}
         </>
       }

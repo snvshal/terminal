@@ -324,7 +324,7 @@ export const FileSystemProvider: React.FC<{
       if (type === "file") {
         setOpenNotepad(true)
         setEditFile({ filename, content: message })
-        return `Open: ${filename}`
+        return `File opened: ${filename}`
       } else if (type === "url") {
         return `URL of ${filename}: fileurl://${message}`
       }

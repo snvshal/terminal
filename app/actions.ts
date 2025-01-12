@@ -249,7 +249,7 @@ export const createNode = async (
     }
 
     if (type === "file") {
-      user.data.files.push({ ...newNode, content: " " } as FileItem)
+      user.data.files.push({ ...newNode, content: "" } as FileItem)
     } else {
       user.data.directories.push(newNode as DirectoryItem)
     }
@@ -408,16 +408,20 @@ export const updateFileContent = async (
   location: string,
   filename: string,
   content: string,
-): Promise<string> => {
+): Promise<{
+  success: boolean
+  message: string
+}> => {
   try {
     const user = await getUser()
-    if (!user) return "Error: User not found"
+    if (!user) return { success: false, message: "Error: User not found" }
 
     const fileIndex = user.data.files.findIndex(
       (f) => f.location === location && f.name === filename,
     )
 
-    if (fileIndex === -1) return "Error: File not found"
+    if (fileIndex === -1)
+      return { success: false, message: "Error: File not found" }
 
     const file = user.data.files[fileIndex]
     file.content = content
@@ -429,10 +433,13 @@ export const updateFileContent = async (
 
     await calculateDirectorySize(user, location, diff)
 
-    return "File content updated successfully"
+    return { success: true, message: "File content updated successfully" }
   } catch (error) {
     console.error("Error in updateFileContent:", error)
-    return "Error: An error occurred while updating file content"
+    return {
+      success: false,
+      message: "Error: An error occurred while updating file content",
+    }
   }
 }
 

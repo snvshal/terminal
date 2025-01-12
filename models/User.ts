@@ -19,7 +19,7 @@ const DirectoryItemSchema = new mongoose.Schema({
 const FileItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   location: { type: String, required: true },
-  content: { type: String, required: true },
+  content: { type: String },
   size: { type: Number, required: true },
   lastModified: { type: Date, required: true },
 })
@@ -86,7 +86,7 @@ const UserSchema = new mongoose.Schema<UserProfile>(
   },
   {
     timestamps: true,
-  }
+  },
 )
 
 export const User =
