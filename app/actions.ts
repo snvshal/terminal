@@ -14,7 +14,7 @@ import {
   Portfolio,
 } from "@/types/schema"
 import { PortfolioSchema, UserProfileSchema } from "@/lib/zod"
-import { createSession, deleteSession } from "@/lib/session"
+import { createSession, deleteSession, getUsername } from "@/lib/session"
 
 export const signUp = async (
   username: string,
@@ -117,7 +117,7 @@ export const deleteAccount = async (
   message: string
 }> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
 
     if (!user) return { success: false, message: "Error: User not found" }
 
@@ -140,11 +140,10 @@ export const deleteAccount = async (
   }
 }
 
-export const getUserByUsername = async (
-  username: string,
-): Promise<UserProfile | null> => {
+export const getUser = async (): Promise<UserProfile | null> => {
   try {
     await dbConnect()
+    const username = await getUsername()
     const user: UserProfile | null = await User.findOne({ username })
     return user
   } catch (error) {
@@ -205,7 +204,7 @@ export async function searchUser(username: string) {
   try {
     if (!username) return ["Error: Please provide a username"]
 
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return [`User not found: '${username}'`]
 
     const portfolio = user.portfolio
@@ -232,7 +231,7 @@ export const createNode = async (
   type: "file" | "directory",
 ): Promise<string> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return "Error: User not found: " + username
 
     const existingItem = await findNodeByPath(user.data, location, name, "any")
@@ -264,12 +263,9 @@ export const createNode = async (
   }
 }
 
-export const listDirectory = async (
-  username: string,
-  location: string,
-): Promise<string[]> => {
+export const listDirectory = async (location: string): Promise<string[]> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return ["Error: User not found"]
 
     const directories = user.data.directories.filter(
@@ -325,11 +321,10 @@ export const listDirectory = async (
 }
 
 export const changeDirectory = async (
-  username: string,
   newPath: string,
 ): Promise<{ success: boolean; message: string }> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return { success: false, message: "Error: User not found" }
 
     const { dirName, parentLocation } = await getDirNameByLocation(newPath)
@@ -355,7 +350,6 @@ export const changeDirectory = async (
 }
 
 export const openFile = async (
-  username: string,
   location: string,
   filename: string,
 ): Promise<{
@@ -364,7 +358,7 @@ export const openFile = async (
   type: "file" | "url" | "not-found"
 }> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user)
       return {
         success: false,
@@ -411,13 +405,12 @@ export const openFile = async (
 }
 
 export const updateFileContent = async (
-  username: string,
   location: string,
   filename: string,
   content: string,
 ): Promise<string> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return "Error: User not found"
 
     const fileIndex = user.data.files.findIndex(
@@ -444,13 +437,12 @@ export const updateFileContent = async (
 }
 
 export const setFileUrl = async (
-  username: string,
   location: string,
   filename: string,
   url: string,
 ): Promise<string> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return "Error: User not found"
 
     const urlIndex = user.data.urls.findIndex(
@@ -510,13 +502,12 @@ export const setFileUrl = async (
 }
 
 export const removeNode = async (
-  username: string,
   location: string,
   name: string,
   type: "file" | "directory",
 ): Promise<string> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return "Error: User not found"
 
     const node = await findNodeByPath(user.data, location, name, "any")
@@ -560,13 +551,12 @@ export const removeNode = async (
 }
 
 export const renameFileOrDirectory = async (
-  username: string,
   location: string,
   oldName: string,
   newName: string,
 ): Promise<string> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return "Error: User not found"
 
     // Check if the old item exists
@@ -623,13 +613,12 @@ export const renameFileOrDirectory = async (
 }
 
 export const moveFileOrDirectory = async (
-  username: string,
   location: string,
   name: string,
   destination: string,
 ): Promise<string> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return "Error: User not found"
 
     const sourceNode = await findNodeByPath(user.data, location, name, "any")
@@ -711,12 +700,9 @@ async function findNodeByPath(
   return undefined
 }
 
-export const updatePortfolio = async (
-  username: string,
-  portfolioData: Portfolio,
-) => {
+export const updatePortfolio = async (portfolioData: Portfolio) => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return { success: false, message: "Error: User not found" }
 
     const validationResult = PortfolioSchema.safeParse(portfolioData)
@@ -737,11 +723,9 @@ export const updatePortfolio = async (
   }
 }
 
-export const loadPortfolio = async (
-  username: string,
-): Promise<Portfolio | null> => {
+export const loadPortfolio = async (): Promise<Portfolio | null> => {
   try {
-    const user = await getUserByUsername(username)
+    const user = await getUser()
     if (!user) return null
 
     const portfolio = user.portfolio

@@ -128,7 +128,7 @@ export const FileSystemProvider: React.FC<{
   const listDirectory = async (): Promise<string[]> => {
     if (!currentUser) return ["Signin to list items"]
     if (currentDirectory) {
-      const list = await listDirectoryAction(currentUser, currentDirectory)
+      const list = await listDirectoryAction(currentDirectory)
       return list
     }
 
@@ -175,10 +175,7 @@ export const FileSystemProvider: React.FC<{
 
       const newPath = `${currentDirectory}/${path}`.replace(/\/+/g, "/")
 
-      const { success, message } = await changeDirectoryAction(
-        currentUser,
-        newPath,
-      )
+      const { success, message } = await changeDirectoryAction(newPath)
 
       if (!success) return message
       setCurrentDirectory(message)
@@ -203,18 +200,13 @@ export const FileSystemProvider: React.FC<{
   const removeDirectory = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to remove directory"
     if (!filename) return "Error: No directory specified"
-    return removeNodeAction(
-      currentUser,
-      currentDirectory,
-      filename,
-      "directory",
-    )
+    return removeNodeAction(currentDirectory, filename, "directory")
   }
 
   const removeFile = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to remove file"
     if (!filename) return "Error: No file specified"
-    return removeNodeAction(currentUser, currentDirectory, filename, "file")
+    return removeNodeAction(currentDirectory, filename, "file")
   }
 
   const renameFileOrDirectory = async (
@@ -230,7 +222,6 @@ export const FileSystemProvider: React.FC<{
     }
 
     const message = await renameFileOrDirectoryAction(
-      currentUser,
       currentDirectory,
       oldName,
       newName,
@@ -264,7 +255,6 @@ export const FileSystemProvider: React.FC<{
     }
 
     const message = await moveFileOrDirectoryAction(
-      currentUser,
       currentDirectory,
       name,
       destinationPath,
@@ -327,7 +317,6 @@ export const FileSystemProvider: React.FC<{
     if (!filename) return "Error: No file specified"
     // if (openNotepad) return "Error: Notepad is already opened"
     const { success, message, type } = await openFileAction(
-      currentUser,
       currentDirectory,
       filename,
     )
@@ -350,12 +339,7 @@ export const FileSystemProvider: React.FC<{
     if (!filename) return "Error: No file specified"
     if (!url) return "Error: No URL specified"
 
-    const result = await setFileUrlAction(
-      currentUser,
-      currentDirectory,
-      filename,
-      url,
-    )
+    const result = await setFileUrlAction(currentDirectory, filename, url)
 
     return result
   }
