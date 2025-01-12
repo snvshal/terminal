@@ -7,7 +7,7 @@ import AboutPage from "./_about"
 export default async function UserPortfolio({
   params,
 }: {
-  params: { username: string }
+  params: Promise<{ username: string }>
 }) {
   const { username } = await params
 
