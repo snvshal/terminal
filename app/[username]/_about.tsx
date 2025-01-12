@@ -14,9 +14,9 @@ const AboutPage: React.FC = () => {
           <p>
             Welcome to the OS Terminal Simulation! This web-based application
             provides a terminal interface for managing your portfolio and
-            interacting with a simulated file system. It's designed to give you
-            a hands-on experience with command-line interfaces while allowing
-            you to create and manage your professional portfolio.
+            interacting with a simulated file system. It&#39;s designed to give
+            you a hands-on experience with command-line interfaces while
+            allowing you to create and manage your professional portfolio.
           </p>
         </section>
 
@@ -42,7 +42,8 @@ const AboutPage: React.FC = () => {
               history.
             </li>
             <li>
-              Type 'help' and press Enter to see a list of available commands.
+              Type &#39;help&#39; and press Enter to see a list of available
+              commands.
             </li>
           </ol>
         </section>
@@ -65,23 +66,24 @@ const AboutPage: React.FC = () => {
               View your current portfolio: <code>view</code>
             </li>
             <li>
-              Edit basic information: <code>edit name "Your Name"</code>
+              Edit basic information: <code>edit name &#34;Your Name&#34;</code>
             </li>
             <li>
-              Add a skill: <code>add skill "Skill Name, Skill Level"</code>
+              Add a skill:{" "}
+              <code>add skill &#34;Skill Name, Skill Level&#34;</code>
             </li>
             <li>
               Add a project:{" "}
               <code>
-                add project "Project Name, Description, Technologies, Link,
-                Image URL"
+                add project &#34;Project Name, Description, Technologies, Link,
+                Image URL&#34;
               </code>
             </li>
             <li>
               Add an experience:{" "}
               <code>
-                add experience "Company, Role, Start Date, End Date,
-                Description"
+                add experience &#34;Company, Role, Start Date, End Date,
+                Description&#34;
               </code>
             </li>
             <li>
@@ -113,9 +115,9 @@ const AboutPage: React.FC = () => {
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold">Practice Terminal</h2>
           <p className="mb-4">
-            To help you get familiar with the terminal commands, we've created a
-            practice area. Here, you can try out commands without affecting your
-            actual account or portfolio.
+            To help you get familiar with the terminal commands, we&#39;ve
+            created a practice area. Here, you can try out commands without
+            affecting your actual account or portfolio.
           </p>
           <Link
             href="/practice-terminal"
@@ -203,8 +205,8 @@ const AboutPage: React.FC = () => {
               Use the up arrow key to quickly access and edit previous commands.
             </li>
             <li>
-              Familiarize yourself with the 'help' command for a quick reference
-              of available commands.
+              Familiarize yourself with the &#39;help&#39; command for a quick
+              reference of available commands.
             </li>
             <li>
               Practice in the dedicated practice terminal before working on your
@@ -221,9 +223,9 @@ const AboutPage: React.FC = () => {
           <h2 className="mb-4 text-2xl font-semibold">Need Help?</h2>
           <p>
             If you encounter any issues, experience difficulties, or have any
-            questions regarding this platform or its functionality, please don't
-            hesitate to reach out to me directly. Feel free to contact me
-            anytime via my profile on{" "}
+            questions regarding this platform or its functionality, please
+            don&#39;t hesitate to reach out to me directly. Feel free to contact
+            me anytime via my profile on{" "}
             <a
               href="https://x.com/snvshal"
               className="text-blue-500 hover:underline"
