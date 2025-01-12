@@ -21,7 +21,7 @@ export type PortfolioContextType = {
 }
 
 export const PortfolioContext = createContext<PortfolioContextType | undefined>(
-  undefined
+  undefined,
 )
 
 export const usePortfolio = () => {
@@ -42,7 +42,7 @@ export const PortfolioProvider: React.FC<{
     const fetchPortfolio = async () => {
       if (!currentUser) return // Ensure there's a current user
       try {
-        const loadedPortfolio = await loadPortfolioAction(currentUser as string)
+        const loadedPortfolio = await loadPortfolioAction()
         setPortfolio(loadedPortfolio)
         console.log("Loaded portfolio:", loadedPortfolio)
       } catch (error) {
@@ -54,7 +54,7 @@ export const PortfolioProvider: React.FC<{
   }, [currentUser])
 
   const executePortfolioCommand = async (
-    command: string
+    command: string,
   ): Promise<string[]> => {
     const [cmd, ...args] = command
       .toLowerCase()
@@ -110,28 +110,28 @@ export const PortfolioProvider: React.FC<{
           "Skills:",
           ...portfolio.skills.map(
             (skill) =>
-              `- ${skill.name}${skill.level ? ` (${skill.level})` : ""}`
+              `- ${skill.name}${skill.level ? ` (${skill.level})` : ""}`,
           ),
         ]
       case "projects":
         return [
           "Projects:",
           ...portfolio.projects.map(
-            (project) => `- ${project.title}: ${project.description}`
+            (project) => `- ${project.title}: ${project.description}`,
           ),
         ]
       case "experiences":
         return [
           "Experiences:",
           ...portfolio.experiences.map(
-            (exp) => `- ${exp.role} at ${exp.company}`
+            (exp) => `- ${exp.role} at ${exp.company}`,
           ),
         ]
       case "social":
         return [
           "Social Links:",
           ...portfolio.socialLinks.map(
-            (link) => `- ${link.platform}: ${link.url}`
+            (link) => `- ${link.platform}: ${link.url}`,
           ),
         ]
       default:
@@ -218,7 +218,7 @@ export const PortfolioProvider: React.FC<{
         setPortfolio({
           ...portfolio,
           skills: portfolio.skills.filter(
-            (skill) => skill.name !== itemIdentifier
+            (skill) => skill.name !== itemIdentifier,
           ),
         })
         return [`Removed skill: ${itemIdentifier}`]
@@ -226,7 +226,7 @@ export const PortfolioProvider: React.FC<{
         setPortfolio({
           ...portfolio,
           projects: portfolio.projects.filter(
-            (project) => project.title !== itemIdentifier
+            (project) => project.title !== itemIdentifier,
           ),
         })
         return [`Removed project: ${itemIdentifier}`]
@@ -234,7 +234,7 @@ export const PortfolioProvider: React.FC<{
         setPortfolio({
           ...portfolio,
           experiences: portfolio.experiences.filter(
-            (exp) => exp.role !== itemIdentifier
+            (exp) => exp.role !== itemIdentifier,
           ),
         })
         return [`Removed experience: ${itemIdentifier}`]
@@ -242,7 +242,7 @@ export const PortfolioProvider: React.FC<{
         setPortfolio({
           ...portfolio,
           socialLinks: portfolio.socialLinks.filter(
-            (link) => link.platform !== itemIdentifier
+            (link) => link.platform !== itemIdentifier,
           ),
         })
         return [`Removed social link: ${itemIdentifier}`]
@@ -255,7 +255,7 @@ export const PortfolioProvider: React.FC<{
     if (!currentUser) return ["Signin to save portfolio"]
     if (!portfolio) return ["Error: No changes to save"]
     try {
-      await updatePortfolioAction(currentUser, portfolio)
+      await updatePortfolioAction(portfolio)
       return ["Portfolio saved successfully"]
     } catch (error) {
       return [`Error saving portfolio: ${error}`]
