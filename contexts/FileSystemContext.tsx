@@ -348,7 +348,7 @@ export const FileSystemProvider: React.FC<{
     username: string,
     password: string,
   ): Promise<string[]> => {
-    if (!username.trim() || !password.trim()) {
+    if (!username || !password) {
       return ["Error: Login failed: username and password are required"]
     }
     if (currentUser) {
