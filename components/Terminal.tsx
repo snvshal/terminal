@@ -3,9 +3,9 @@
 import React, { useState, useRef, useEffect } from "react"
 import { useFileSystem } from "../contexts/FileSystemContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
-// import { updateFileContent as updateFileContentAction } from "@/app/actions"
 import { cn } from "@/lib/utils"
 import Window from "./Window"
+import { useRouter } from "next/navigation"
 
 export type TerminalProps = {
   initialPosition: { x: number; y: number }
@@ -23,17 +23,12 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   const [isExecuting, setIsExecuting] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
-  // const textareaRef = useRef<HTMLTextAreaElement>(null)
   const outputRef = useRef<HTMLDivElement>(null)
-  const {
-    currentDirectory,
-    executeCommand,
-    currentUser,
-    searching,
-    // setEditMode,
-    // editMode,
-  } = useFileSystem()
+  const { currentDirectory, executeCommand, currentUser, searching } =
+    useFileSystem()
   const { executePortfolioCommand } = usePortfolio()
+
+  const router = useRouter()
 
   useEffect(() => {
     if (outputRef.current) {
@@ -73,6 +68,8 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
           for (const line of result) {
             if (line === "clear") {
               setOutput([])
+            } else if (line === "about") {
+              router.push("/about")
             } else {
               await new Promise((resolve) => setTimeout(resolve, 10))
               setOutput((prev) => [...prev, line])
@@ -118,27 +115,6 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       e.preventDefault()
     }
   }
-
-  // const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-  //   if (e.key === "Enter" && !e.shiftKey) {
-  //     e.preventDefault()
-  //     handleEditSubmit()
-  //   }
-  // }
-
-  // const handleEditSubmit = async () => {
-  //   if (editMode) {
-  //     const message = await updateFileContentAction(
-  //       currentUser!,
-  //       currentDirectory,
-  //       editMode.filename,
-  //       editMode.content,
-  //     )
-
-  //     setOutput((prev) => [...prev, message])
-  //     setEditMode(null)
-  //   }
-  // }
 
   const renderLine = (line: string): React.JSX.Element => {
     if (line.includes("fileurl://")) {

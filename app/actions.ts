@@ -152,6 +152,19 @@ export const getUser = async (): Promise<UserProfile | null> => {
   }
 }
 
+export const getUserByUsername = async (
+  username: string,
+): Promise<UserProfile | null> => {
+  try {
+    await dbConnect()
+    const user: UserProfile | null = await User.findOne({ username })
+    return user
+  } catch (error) {
+    console.error("Error in getUserByUsername:", error)
+    return null
+  }
+}
+
 export async function calculateSize(data: FileSystemNode): Promise<number> {
   try {
     if (!data || typeof data !== "object") {
