@@ -19,7 +19,7 @@ import { createSession, deleteSession } from "@/lib/session"
 export const signUp = async (
   username: string,
   password: string,
-): Promise<{ success: boolean; message: string }> => {
+): Promise<{ success: boolean; message: string[] }> => {
   try {
     const validationResult = UserProfileSchema.safeParse({
       username,
@@ -37,14 +37,17 @@ export const signUp = async (
     })
 
     if (!validationResult.success) {
-      return { success: false, message: "Invalid user data" }
+      const errorMessages = validationResult.error.errors.map(
+        (err) => "Error: " + err.message,
+      )
+      return { success: false, message: errorMessages }
     }
 
     await dbConnect()
 
     const existingUser = await User.findOne({ username })
     if (existingUser) {
-      return { success: false, message: "Username already taken" }
+      return { success: false, message: ["Username already taken"] }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
@@ -56,10 +59,10 @@ export const signUp = async (
 
     await createSession(username)
 
-    return { success: true, message: "Your account has been created" }
+    return { success: true, message: ["Your account has been created"] }
   } catch (error) {
     console.error("Error during sign up:", error)
-    return { success: false, message: "An error occurred during sign up" }
+    return { success: false, message: ["An error occurred during sign up"] }
   }
 }
 

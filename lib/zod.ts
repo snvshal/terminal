@@ -69,8 +69,22 @@ export const PortfolioSchema = z.object({
 })
 
 export const UserProfileSchema = z.object({
-  username: z.string(),
-  password: z.string(),
+  username: z.string().regex(/^[a-zA-Z0-9]+$/, {
+    message: "Username must only contain letters and numbers.",
+  }),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters long." })
+    .regex(/[A-Z]/, {
+      message: "Password must contain at least one uppercase letter.",
+    })
+    .regex(/[a-z]/, {
+      message: "Password must contain at least one lowercase letter.",
+    })
+    .regex(/[0-9]/, { message: "Password must contain at least one digit." })
+    .regex(/[\W_]/, {
+      message: "Password must contain at least one special character.",
+    }),
   data: UserDataSchema,
   portfolio: PortfolioSchema,
 })
