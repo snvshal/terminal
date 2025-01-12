@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import { useFileSystem } from "../contexts/FileSystemContext"
 import { usePortfolio } from "@/contexts/PortfolioContext"
-import { updateFileContent as updateFileContentAction } from "@/app/actions"
+// import { updateFileContent as updateFileContentAction } from "@/app/actions"
 import { cn } from "@/lib/utils"
 import Window from "./Window"
 
@@ -23,15 +23,15 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   const [isExecuting, setIsExecuting] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // const textareaRef = useRef<HTMLTextAreaElement>(null)
   const outputRef = useRef<HTMLDivElement>(null)
   const {
     currentDirectory,
     executeCommand,
     currentUser,
     searching,
-    setEditMode,
-    editMode,
+    // setEditMode,
+    // editMode,
   } = useFileSystem()
   const { executePortfolioCommand } = usePortfolio()
 
@@ -52,7 +52,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       setIsExecuting(true)
       setOutput((prev) => [
         ...prev,
-        `cmd://${currentUser}@${currentDirectory} $ ${input}`,
+        `cmd://${currentUser ?? ""}@${currentDirectory} $ ${input}`,
       ])
       setCommandHistory([...commandHistory, input])
       setHistoryIndex(-1)
@@ -106,7 +106,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
         setInput(
           historyIndex === 0
             ? ""
-            : commandHistory[commandHistory.length - 1 - historyIndex + 1]
+            : commandHistory[commandHistory.length - 1 - historyIndex + 1],
         )
       }
     } else if (e.key === "ArrowRight") {
@@ -119,26 +119,26 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
     }
   }
 
-  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleEditSubmit()
-    }
-  }
+  // const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  //   if (e.key === "Enter" && !e.shiftKey) {
+  //     e.preventDefault()
+  //     handleEditSubmit()
+  //   }
+  // }
 
-  const handleEditSubmit = async () => {
-    if (editMode) {
-      const message = await updateFileContentAction(
-        currentUser!,
-        currentDirectory,
-        editMode.filename,
-        editMode.content
-      )
+  // const handleEditSubmit = async () => {
+  //   if (editMode) {
+  //     const message = await updateFileContentAction(
+  //       currentUser!,
+  //       currentDirectory,
+  //       editMode.filename,
+  //       editMode.content,
+  //     )
 
-      setOutput((prev) => [...prev, message])
-      setEditMode(null)
-    }
-  }
+  //     setOutput((prev) => [...prev, message])
+  //     setEditMode(null)
+  //   }
+  // }
 
   const renderLine = (line: string): React.JSX.Element => {
     if (line.includes("fileurl://")) {
@@ -180,7 +180,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       initialPosition={initialPosition}
     >
       <div
-        className="p-4 w-full overflow-y-auto text-zinc-100 font-mono text-sm h-full"
+        className="h-full w-full overflow-y-auto p-4 font-mono text-sm text-zinc-100"
         ref={outputRef}
       >
         {output.map((line, index) => (
@@ -188,7 +188,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
             key={index}
             className={cn(
               "whitespace-pre",
-              line.startsWith("Error:") && "text-red-500"
+              line.startsWith("Error:") && "text-red-500",
               // line.startsWith("cmd://") && "my-2"
             )}
           >
@@ -196,23 +196,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
           </div>
         ))}
 
-        {editMode ? (
-          <div className="mt-2">
-            <textarea
-              ref={textareaRef}
-              value={editMode.content}
-              onChange={(e) =>
-                setEditMode({
-                  ...editMode,
-                  content: e.target.value,
-                })
-              }
-              onKeyDown={handleEditKeyDown}
-              className="w-full h-auto bg-zinc-800 outline-none p-2 mt-1 rounded resize-none"
-              rows={10}
-            />
-          </div>
-        ) : !searching ? (
+        {!searching ? (
           !isExecuting && (
             <div className="flex items-center whitespace-pre">
               <span>{`${currentUser ?? ""}@${currentDirectory} $ `}</span>

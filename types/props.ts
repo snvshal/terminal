@@ -21,6 +21,7 @@ export type WindowProps = {
   children: React.ReactNode
   onClose: () => void
   initialPosition: { x: number; y: number }
+  status?: React.ReactElement
 }
 
 export type WindowHeaderProps = {
@@ -29,4 +30,5 @@ export type WindowHeaderProps = {
   toggleWindowFullScreen: () => void
   toggleFullScreen: () => void
   onMouseDown: (e: React.MouseEvent) => void
+  status?: React.ReactElement
 }

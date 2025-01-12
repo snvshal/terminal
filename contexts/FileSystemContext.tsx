@@ -9,12 +9,12 @@ import {
   createNode as createNodeAction,
   listDirectory as listDirectoryAction,
   changeDirectory as changeDirectoryAction,
-  readFileContent as readFileContentAction,
-  editFileContent as editFileContentAction,
+  openFile as openFileAction,
   setFileUrl as setFileUrlAction,
   removeNode as removeNodeAction,
   moveFileOrDirectory as moveFileOrDirectoryAction,
   renameFileOrDirectory as renameFileOrDirectoryAction,
+  deleteAccount as deleteAccountAction,
 } from "../app/actions"
 
 export type FileSystemContextType = {
@@ -25,8 +25,10 @@ export type FileSystemContextType = {
   currentUser: string | null
   setCurrentUser: (username: string | null) => void
   searching: string | null
-  editMode: { filename: string; content: string } | null
-  setEditMode: React.Dispatch<
+  openNotepad: boolean
+  setOpenNotepad: React.Dispatch<React.SetStateAction<boolean>>
+  editFile: { filename: string; content: string } | null
+  setEditFile: React.Dispatch<
     React.SetStateAction<{ filename: string; content: string } | null>
   >
 }
@@ -50,7 +52,8 @@ export const FileSystemProvider: React.FC<{
   const [currentDirectory, setCurrentDirectory] = useState("/")
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [searching, setSearching] = useState<string | null>(null)
-  const [editMode, setEditMode] = useState<{
+  const [openNotepad, setOpenNotepad] = useState<boolean>(false)
+  const [editFile, setEditFile] = useState<{
     filename: string
     content: string
   } | null>(null)
@@ -79,9 +82,7 @@ export const FileSystemProvider: React.FC<{
       case "touch":
         return [await createFile(args[0])]
       case "open":
-        return [await readFileContent(args[0])]
-      case "edit":
-        return [await editFileContent(args[0])]
+        return [await openFile(args[0])]
       case "rmdir":
         return [await removeDirectory(args[0])]
       case "rm":
@@ -105,6 +106,8 @@ export const FileSystemProvider: React.FC<{
         return await signIn(args[0], args[1])
       case "signout":
         return await signOut()
+      case "userdel":
+        return await deleteAccount(args[0], args[1])
       case "search":
         return await searchUserAction(args[0])
       case "seturl":
@@ -125,7 +128,7 @@ export const FileSystemProvider: React.FC<{
   const listDirectory = async (): Promise<string[]> => {
     if (!currentUser) return ["Signin to list items"]
     if (currentDirectory) {
-      const list = await listDirectoryAction(currentUser, currentDirectory)
+      const list = await listDirectoryAction(currentDirectory)
       return list
     }
 
@@ -172,10 +175,7 @@ export const FileSystemProvider: React.FC<{
 
       const newPath = `${currentDirectory}/${path}`.replace(/\/+/g, "/")
 
-      const { success, message } = await changeDirectoryAction(
-        currentUser,
-        newPath
-      )
+      const { success, message } = await changeDirectoryAction(newPath)
 
       if (!success) return message
       setCurrentDirectory(message)
@@ -197,41 +197,21 @@ export const FileSystemProvider: React.FC<{
     return createNodeAction(currentUser, currentDirectory, name, "file")
   }
 
-  const readFileContent = async (filename: string): Promise<string> => {
-    if (!currentUser) return "Signin to read file"
-    if (!filename) return "Error: No file specified"
-
-    if (currentDirectory) {
-      const message = await readFileContentAction(
-        currentUser,
-        currentDirectory,
-        filename
-      )
-      return message
-    }
-    return `Error: File not found: ${filename}`
-  }
-
   const removeDirectory = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to remove directory"
     if (!filename) return "Error: No directory specified"
-    return removeNodeAction(
-      currentUser,
-      currentDirectory,
-      filename,
-      "directory"
-    )
+    return removeNodeAction(currentDirectory, filename, "directory")
   }
 
   const removeFile = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to remove file"
     if (!filename) return "Error: No file specified"
-    return removeNodeAction(currentUser, currentDirectory, filename, "file")
+    return removeNodeAction(currentDirectory, filename, "file")
   }
 
   const renameFileOrDirectory = async (
     oldName: string,
-    newName: string
+    newName: string,
   ): Promise<string> => {
     if (!currentUser) return "Signin to rename file/directory"
     if (!oldName || !newName)
@@ -242,10 +222,9 @@ export const FileSystemProvider: React.FC<{
     }
 
     const message = await renameFileOrDirectoryAction(
-      currentUser,
       currentDirectory,
       oldName,
-      newName
+      newName,
     )
 
     return message
@@ -257,7 +236,7 @@ export const FileSystemProvider: React.FC<{
 
   const moveFileOrDirectory = async (
     name: string,
-    destination: string
+    destination: string,
   ): Promise<string> => {
     if (!currentUser) return "Signin to move file/directory"
     if (!name || !destination)
@@ -276,10 +255,9 @@ export const FileSystemProvider: React.FC<{
     }
 
     const message = await moveFileOrDirectoryAction(
-      currentUser,
       currentDirectory,
       name,
-      destinationPath
+      destinationPath,
     )
     return message
   }
@@ -294,23 +272,24 @@ export const FileSystemProvider: React.FC<{
       ["rmdir [directory]", "Remove an empty directory"],
       ["touch [file]", "Create a new file"],
       ["open [file]", "Display file or url content"],
-      ["edit [file]", "Edit file content"],
+      // ["edit [file]", "Edit file content"],
       ["seturl [file] [url]", "Set and update URL content for a file"],
       ["rm [file]", "Remove a file or url"],
       ["mv [file/directory] [destination]", "Move a file or directory"],
       ["rename [old name] [new name]", "Rename a file or directory or url"],
       // ["chmod [permissions] [file/directory]", "Change file permissions"],
 
-      // Utility commands
-      ["clear/cls", "Clear the terminal screen"],
-      ["help", "Display this help message"],
-
       // Account-related commands
       //  ["search [username]", "Search for a user portfolio"],
       ["signup [username] [password]", "Create a new user account"],
       ["signin [username] [password]", "Sign in to your account"],
       ["signout", "Sign out of your account"],
+      ["userdel [username] [password]", "Delete your account"],
       ["portfolio", "View and edit your portfolio"],
+
+      // Utility commands
+      ["clear/cls", "Clear the terminal screen"],
+      ["help", "Display this help message"],
     ]
 
     const output = [
@@ -333,24 +312,26 @@ export const FileSystemProvider: React.FC<{
     return `${currentDirectory}/${filename}`.replace(/\/+/g, "/")
   }
 
-  const editFileContent = async (filename: string): Promise<string> => {
+  const openFile = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to edit file"
     if (!filename) return "Error: No file specified"
-    if (currentDirectory) {
-      const { success, message } = await editFileContentAction(
-        currentUser,
-        currentDirectory,
-        filename
-      )
-      if (success) {
-        setEditMode({ filename, content: message })
-        return `EDIT_MODE:${filename}`
-      } else {
-        return `Error: ${message}`
+    // if (openNotepad) return "Error: Notepad is already opened"
+    const { success, message, type } = await openFileAction(
+      currentDirectory,
+      filename,
+    )
+    if (success) {
+      if (type === "file") {
+        setOpenNotepad(true)
+        setEditFile({ filename, content: message })
+        return `Open: ${filename}`
+      } else if (type === "url") {
+        return `URL of ${filename}: fileurl://${message}`
       }
+      return "Error: File not found"
+    } else {
+      return `Error: ${message}`
     }
-
-    return "Error: File not found"
   }
 
   const setFileUrl = async (filename: string, url: string): Promise<string> => {
@@ -358,21 +339,16 @@ export const FileSystemProvider: React.FC<{
     if (!filename) return "Error: No file specified"
     if (!url) return "Error: No URL specified"
 
-    const result = await setFileUrlAction(
-      currentUser,
-      currentDirectory,
-      filename,
-      url
-    )
+    const result = await setFileUrlAction(currentDirectory, filename, url)
 
     return result
   }
 
   const signUp = async (
     username: string,
-    password: string
+    password: string,
   ): Promise<string[]> => {
-    if (!username.trim() || !password.trim()) {
+    if (!username || !password) {
       return ["Error: Login failed: username and password are required"]
     }
     if (currentUser) {
@@ -389,14 +365,14 @@ export const FileSystemProvider: React.FC<{
         setCurrentDirectory(`/${username}`)
         return [`Signup successful. Welcome, ${username}!`]
       } else {
-        return ["Signup failed: " + message]
+        return ["Error: Signup failed: ", ...message]
       }
     }
   }
 
   const signIn = async (
     username: string,
-    password: string
+    password: string,
   ): Promise<string[]> => {
     if (!username || !password) {
       return ["Error: Login failed: username and password are required"]
@@ -436,6 +412,23 @@ export const FileSystemProvider: React.FC<{
     }
   }
 
+  const deleteAccount = async (
+    username: string,
+    password: string,
+  ): Promise<string[]> => {
+    if (!currentUser) {
+      return ["Error: You are not signed in!"]
+    } else {
+      const { success, message } = await deleteAccountAction(username, password)
+      if (success) {
+        setCurrentUser(null)
+        setCurrentDirectory("/")
+      }
+
+      return [message]
+    }
+  }
+
   return (
     <FileSystemContext.Provider
       value={{
@@ -446,8 +439,10 @@ export const FileSystemProvider: React.FC<{
         currentUser,
         setCurrentUser,
         searching,
-        setEditMode,
-        editMode,
+        openNotepad,
+        setOpenNotepad,
+        setEditFile,
+        editFile,
       }}
     >
       {children}
