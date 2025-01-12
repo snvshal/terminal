@@ -22,7 +22,7 @@ const Notepad: React.FC<NotepadProps> = ({ initialPosition, onClose }) => {
   )
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const { editFile, currentUser, currentDirectory } = useFileSystem()
+  const { editFile, currentDirectory } = useFileSystem()
 
   useEffect(() => {
     setContent(editFile?.content || "")
@@ -71,12 +71,7 @@ const Notepad: React.FC<NotepadProps> = ({ initialPosition, onClose }) => {
   const handleSave = async () => {
     if (!editFile) return null
     setSaveStatus("saving")
-    await updateFileContentAction(
-      currentUser!,
-      currentDirectory,
-      editFile.filename,
-      content,
-    )
+    await updateFileContentAction(currentDirectory, editFile.filename, content)
     // Simulate API call or file system operation
     setTimeout(() => {
       setSaveStatus("saved")
