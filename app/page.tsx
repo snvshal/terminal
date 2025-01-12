@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import dynamic from "next/dynamic"
 import Desktop from "../components/Desktop"
 import { initialWindowSize } from "@/components/Window"
@@ -32,58 +32,63 @@ function HomeContent() {
     }
 
     calculateCenter()
-
-    // window.addEventListener("resize", calculateCenter)
-    // return () => window.removeEventListener("resize", calculateCenter)
+    // Optionally add resize listener if needed:
+    // window.addEventListener("resize", calculateCenter);
+    // return () => window.removeEventListener("resize", calculateCenter);
   }, [])
 
-  const closeWindow = (id: string) => {
-    setOpenWindows((prevWindows) =>
-      prevWindows.filter((window) => window.id !== id),
-    )
+  const closeWindow = useCallback(
+    (id: string) => {
+      setOpenWindows((prevWindows) =>
+        prevWindows.filter((window) => window.id !== id),
+      )
 
-    if ((id = "notepad")) setOpenNotepad(false)
-  }
+      if (id === "notepad") setOpenNotepad(false)
+    },
+    [setOpenNotepad],
+  )
 
-  useEffect(() => {
+  const openTerminal = useCallback(() => {
     if (windowCenter) {
-      openTerminal()
-    }
-  }, [windowCenter])
-
-  useEffect(() => {
-    if (openNotepad) {
       setOpenWindows([
-        ...openWindows,
+        {
+          id: "terminal",
+          component: (
+            <Terminal
+              initialPosition={windowCenter}
+              onClose={() => closeWindow("terminal")}
+            />
+          ),
+        },
+      ])
+    }
+  }, [windowCenter, closeWindow])
+
+  const handleOpenNotepad = useCallback(() => {
+    if (windowCenter) {
+      setOpenWindows((prevWindows) => [
+        ...prevWindows,
         {
           id: "notepad",
           component: (
             <Notepad
-              initialPosition={{ x: 100, y: 100 }}
+              initialPosition={{
+                x: windowCenter.x / 2,
+                y: windowCenter.y / 2,
+              }}
               onClose={() => closeWindow("notepad")}
             />
           ),
         },
       ])
-    } else {
-      closeWindow("notepad")
     }
-  }, [openNotepad])
+  }, [windowCenter, closeWindow])
 
-  const openTerminal = () => {
-    // console.log("✨ Double clicked ✨")
-    setOpenWindows([
-      {
-        id: "terminal",
-        component: (
-          <Terminal
-            initialPosition={windowCenter!}
-            onClose={() => closeWindow("terminal")}
-          />
-        ),
-      },
-    ])
-  }
+  useEffect(() => {
+    if (openNotepad) handleOpenNotepad()
+  }, [openNotepad, handleOpenNotepad])
+
+  useEffect(() => openTerminal(), [windowCenter, openTerminal])
 
   return (
     <Desktop>

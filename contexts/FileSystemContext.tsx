@@ -9,8 +9,7 @@ import {
   createNode as createNodeAction,
   listDirectory as listDirectoryAction,
   changeDirectory as changeDirectoryAction,
-  readFileContent as readFileContentAction,
-  editFileContent as editFileContentAction,
+  openFile as openFileAction,
   setFileUrl as setFileUrlAction,
   removeNode as removeNodeAction,
   moveFileOrDirectory as moveFileOrDirectoryAction,
@@ -82,9 +81,7 @@ export const FileSystemProvider: React.FC<{
       case "touch":
         return [await createFile(args[0])]
       case "open":
-        return [await readFileContent(args[0])]
-      case "edit":
-        return [await editFileContent(args[0])]
+        return [await openFile(args[0])]
       case "rmdir":
         return [await removeDirectory(args[0])]
       case "rm":
@@ -200,21 +197,6 @@ export const FileSystemProvider: React.FC<{
     return createNodeAction(currentUser, currentDirectory, name, "file")
   }
 
-  const readFileContent = async (filename: string): Promise<string> => {
-    if (!currentUser) return "Signin to read file"
-    if (!filename) return "Error: No file specified"
-
-    if (currentDirectory) {
-      const message = await readFileContentAction(
-        currentUser,
-        currentDirectory,
-        filename,
-      )
-      return message
-    }
-    return `Error: File not found: ${filename}`
-  }
-
   const removeDirectory = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to remove directory"
     if (!filename) return "Error: No directory specified"
@@ -297,7 +279,7 @@ export const FileSystemProvider: React.FC<{
       ["rmdir [directory]", "Remove an empty directory"],
       ["touch [file]", "Create a new file"],
       ["open [file]", "Display file or url content"],
-      ["edit [file]", "Edit file content"],
+      // ["edit [file]", "Edit file content"],
       ["seturl [file] [url]", "Set and update URL content for a file"],
       ["rm [file]", "Remove a file or url"],
       ["mv [file/directory] [destination]", "Move a file or directory"],
@@ -336,26 +318,27 @@ export const FileSystemProvider: React.FC<{
     return `${currentDirectory}/${filename}`.replace(/\/+/g, "/")
   }
 
-  const editFileContent = async (filename: string): Promise<string> => {
+  const openFile = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to edit file"
     if (!filename) return "Error: No file specified"
-    if (openNotepad) return "Error: Notepad is already opened"
-    if (currentDirectory) {
-      const { success, message } = await editFileContentAction(
-        currentUser,
-        currentDirectory,
-        filename,
-      )
-      if (success) {
+    // if (openNotepad) return "Error: Notepad is already opened"
+    const { success, message, type } = await openFileAction(
+      currentUser,
+      currentDirectory,
+      filename,
+    )
+    if (success) {
+      if (type === "file") {
         setOpenNotepad(true)
         setEditFile({ filename, content: message })
-        return `EDIT_MODE:${filename}`
-      } else {
-        return `Error: ${message}`
+        return `Open:${filename}`
+      } else if (type === "url") {
+        return `URL of ${filename}: fileurl://${message}`
       }
+      return "Error: File not found"
+    } else {
+      return `Error: ${message}`
     }
-
-    return "Error: File not found"
   }
 
   const setFileUrl = async (filename: string, url: string): Promise<string> => {

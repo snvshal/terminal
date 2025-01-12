@@ -18,6 +18,7 @@ const WindowHeader: React.FC<WindowHeaderProps> = ({
   toggleWindowFullScreen,
   toggleFullScreen,
   onMouseDown,
+  status,
 }) => (
   <div
     className="flex cursor-grab items-center justify-between bg-zinc-800 px-4 py-2 selection:bg-transparent active:cursor-grabbing"
@@ -40,6 +41,7 @@ const WindowHeader: React.FC<WindowHeaderProps> = ({
     <span className="font-semibold text-gray-500">{title}</span>
     <span className="flex w-14 justify-end">
       {/* <Circle className="size-4" /> */}
+      {status}
     </span>
   </div>
 )
@@ -88,6 +90,7 @@ const Window: React.FC<WindowProps> = ({
   children,
   onClose,
   initialPosition,
+  status,
 }) => {
   const [position, setPosition] = useState(initialPosition)
   const [size, setSize] = useState(initialWindowSize)
@@ -252,6 +255,7 @@ const Window: React.FC<WindowProps> = ({
           toggleWindowFullScreen={toggleWindowFullScreen}
           toggleFullScreen={toggleFullScreen}
           onMouseDown={(e) => handleMouseDown(e, "drag")}
+          status={status}
         />
         <div className="h-[calc(100%-2.5rem)] overflow-hidden selection:bg-gray-500">
           {children}
