@@ -73,6 +73,9 @@ export const PortfolioProvider: React.FC<{
         return removeItem(args[0], args.slice(1).join(" "))
       case "save":
         return savePortfolio()
+      case "clear":
+      case "cls":
+        return ["clear"]
       case "help":
         return portfolioHelpCommand()
       case "exit":
@@ -94,11 +97,11 @@ export const PortfolioProvider: React.FC<{
       return [
         "Portfolio Overview:",
         "                                                   ",
-        `Name         ${portfolio.name}`,
-        `Title        ${portfolio.title}`,
-        `Bio          ${portfolio.bio}`,
-        `Email        ${portfolio.email || "Not set"}`,
-        `Avatar       ${portfolio.avatar || "Not set"}`,
+        `- Name:             ${portfolio.name}`,
+        `- Title:            ${portfolio.title}`,
+        `- Bio:              ${portfolio.bio}`,
+        `- Email:            ${portfolio.email || "Not set"}`,
+        `- Avatar:           ${portfolio.avatar ? "fileurl://" + portfolio.avatar : "Not set"}`,
         "                                                   ",
         "Use 'view <section>' to see details of skills, projects, experiences, or social links.",
       ]
@@ -108,31 +111,40 @@ export const PortfolioProvider: React.FC<{
       case "skills":
         return [
           "Skills:",
-          ...portfolio.skills.map(
-            (skill) =>
-              `- ${skill.name}${skill.level ? ` (${skill.level})` : ""}`,
-          ),
+          ...portfolio.skills.flatMap((skill) => [
+            `- Name:             ${skill.name}`,
+            `- Level:            ${skill.level ? `${skill.level}` : "Not set"}`,
+          ]),
         ]
       case "projects":
         return [
           "Projects:",
-          ...portfolio.projects.map(
-            (project) => `- ${project.title}: ${project.description}`,
-          ),
+          ...portfolio.projects.flatMap((project) => [
+            `- Title:            ${project.title}`,
+            `- Description:      ${project.description}`,
+            `- Technologies:     ${project.technologies}`,
+            `- Technologies:     ${project.link ? "fileurl://" + project.link : "Not set"}`,
+            `- Image:            ${project.image ? "fileurl://" + project.image : "Not set"}`,
+          ]),
         ]
       case "experiences":
         return [
           "Experiences:",
-          ...portfolio.experiences.map(
-            (exp) => `- ${exp.role} at ${exp.company}`,
-          ),
+          ...portfolio.experiences.flatMap((exp) => [
+            `- Role:             ${exp.role}`,
+            `- Company:          ${exp.company}`,
+            `- Description:      ${exp.description} `,
+            `- Start Date:       ${exp.startDate}`,
+            `- End Date:         ${exp.endDate || "Present"}`,
+          ]),
         ]
       case "social":
         return [
           "Social Links:",
-          ...portfolio.socialLinks.map(
-            (link) => `- ${link.platform}: ${link.url}`,
-          ),
+          ...portfolio.socialLinks.flatMap((link) => [
+            `- Platform:         ${link.platform}`,
+            `- Link:             ${"fileurl://" + link.url}`,
+          ]),
         ]
       default:
         return [`Error: Unknown section: ${section}`]
@@ -141,6 +153,9 @@ export const PortfolioProvider: React.FC<{
 
   const editPortfolio = (field: string, value: string): string[] => {
     if (!portfolio) return ["Error: Portfolio not loaded"]
+    if (!field || !value) {
+      return [`Error: ${!field ? "Field" : "Value"} is required`]
+    }
 
     switch (field) {
       case "name":
@@ -159,6 +174,9 @@ export const PortfolioProvider: React.FC<{
 
   const addItem = (section: string, itemData: string): string[] => {
     if (!portfolio) return ["Error: Portfolio not loaded"]
+    if (!section || !itemData) {
+      return [`Error: ${!section ? "Section" : "Item data"} is required`]
+    }
 
     switch (section) {
       case "skill":
@@ -279,6 +297,7 @@ export const PortfolioProvider: React.FC<{
       ["remove <section> <identifier>", "Remove item from a section"],
       ["save", "Save changes to the portfolio"],
       ["help", "Display this help message"],
+      ["clear/cls", "Clear the terminal screen"],
     ]
 
     const output = [

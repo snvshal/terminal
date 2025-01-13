@@ -114,6 +114,8 @@ export const FileSystemProvider: React.FC<{
         return [await setFileUrl(args[0], args[1])]
       case "portfolio":
         return [userPortfolio()]
+      case "about":
+        return ["about"]
       default:
         return [`Error: Command not found: ${cmd}`]
     }
@@ -289,6 +291,7 @@ export const FileSystemProvider: React.FC<{
 
       // Utility commands
       ["clear/cls", "Clear the terminal screen"],
+      ["about", "Detailed explanation about the terminal"],
       ["help", "Display this help message"],
     ]
 
@@ -324,7 +327,7 @@ export const FileSystemProvider: React.FC<{
       if (type === "file") {
         setOpenNotepad(true)
         setEditFile({ filename, content: message })
-        return `Open: ${filename}`
+        return `File opened: ${filename}`
       } else if (type === "url") {
         return `URL of ${filename}: fileurl://${message}`
       }
