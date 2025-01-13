@@ -62,7 +62,10 @@ export const signUp = async (
     return { success: true, message: ["Your account has been created"] }
   } catch (error) {
     console.error("Error during sign up:", error)
-    return { success: false, message: ["An error occurred during sign up"] }
+    return {
+      success: false,
+      message: ["Error: An error occurred during sign up"],
+    }
   }
 }
 
@@ -78,13 +81,16 @@ export const signIn = async (
     if (!user) {
       return {
         success: false,
-        message: "Login failed: user not found",
+        message: "Error: Login failed: user not found",
       }
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password)
     if (!isPasswordValid) {
-      return { success: false, message: "Login failed: invalid password" }
+      return {
+        success: false,
+        message: "Error: Login failed: invalid password",
+      }
     }
 
     await createSession(username)
@@ -92,7 +98,10 @@ export const signIn = async (
     return { success: true, message: user.username }
   } catch (error) {
     console.error("Error during sign in:", error)
-    return { success: false, message: "Login failed: error during sign in" }
+    return {
+      success: false,
+      message: "Error: Login failed: error during sign in",
+    }
   }
 }
 
@@ -105,7 +114,10 @@ export const signOut = async (): Promise<{
     return { success: true, message: "You have been signed out!" }
   } catch (error) {
     console.error("Error during sign out:", error)
-    return { success: false, message: "An error occurred during sign out" }
+    return {
+      success: false,
+      message: "Error: An error occurred during sign out",
+    }
   }
 }
 

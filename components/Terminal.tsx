@@ -26,7 +26,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   const outputRef = useRef<HTMLDivElement>(null)
   const { currentDirectory, executeCommand, currentUser, searching } =
     useFileSystem()
-  const { executePortfolioCommand } = usePortfolio()
+  const { executePortfolioCommand, inputMode, handleInputStep } = usePortfolio()
 
   const router = useRouter()
 
@@ -53,27 +53,21 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       setHistoryIndex(-1)
 
       try {
-        if (currentDirectory === `${currentUser}@portfolio`) {
-          const result = await executePortfolioCommand(input)
-          for (const line of result) {
-            if (line === "clear") {
-              setOutput([])
-            } else {
-              await new Promise((resolve) => setTimeout(resolve, 10))
-              setOutput((prev) => [...prev, line])
-            }
-          }
+        let result: string[]
+        if (currentDirectory === "portfolio") {
+          result = await executePortfolioCommand(input)
         } else {
-          const result = await executeCommand(input)
-          for (const line of result) {
-            if (line === "clear") {
-              setOutput([])
-            } else if (line === "about") {
-              router.push("/about")
-            } else {
-              await new Promise((resolve) => setTimeout(resolve, 10))
-              setOutput((prev) => [...prev, line])
-            }
+          result = await executeCommand(input)
+        }
+
+        for (const line of result) {
+          if (line === "clear") {
+            setOutput([])
+          } else if (line === "about") {
+            router.push("/about")
+          } else {
+            await new Promise((resolve) => setTimeout(resolve, 10))
+            setOutput((prev) => [...prev, line])
           }
         }
       } catch (error) {
@@ -89,16 +83,40 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
     }
   }
 
+  const handleInputModeSubmit = async () => {
+    if (!inputMode) return
+
+    try {
+      const result = await handleInputStep(input)
+      setOutput((prev) => [...prev, ...result])
+    } catch (error) {
+      if (error instanceof Error) {
+        setOutput((prev) => [...prev, `Error: ${error.message}`])
+      } else {
+        setOutput((prev) => [...prev, `Error: ${String(error)}`])
+      }
+    }
+
+    setInput("")
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowUp") {
+    if (e.key === "Enter") {
       e.preventDefault()
-      if (historyIndex < commandHistory.length - 1) {
+      if (inputMode) {
+        handleInputModeSubmit()
+      } else {
+        handleInputSubmit(e)
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault()
+      if (!inputMode && historyIndex < commandHistory.length - 1) {
         setHistoryIndex(historyIndex + 1)
         setInput(commandHistory[commandHistory.length - 1 - historyIndex - 1])
       }
     } else if (e.key === "ArrowDown") {
       e.preventDefault()
-      if (historyIndex > -1) {
+      if (!inputMode && historyIndex > -1) {
         setHistoryIndex(historyIndex - 1)
         setInput(
           historyIndex === 0
@@ -107,9 +125,11 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
         )
       }
     } else if (e.key === "ArrowRight") {
-      const lastCommand = commandHistory[commandHistory.length - 1] || ""
-      if (input.length < lastCommand.length) {
-        setInput(lastCommand.slice(0, input.length + 1))
+      if (!inputMode) {
+        const lastCommand = commandHistory[commandHistory.length - 1] || ""
+        if (input.length < lastCommand.length) {
+          setInput(lastCommand.slice(0, input.length + 1))
+        }
       }
     } else if (e.key === "Tab") {
       e.preventDefault()
@@ -117,6 +137,10 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   }
 
   const renderLine = (line: string): React.JSX.Element => {
+    if (line.startsWith("cmd://")) {
+      return <span className="my-4">{line.replace("cmd://", "")}</span>
+    }
+
     if (line.includes("fileurl://")) {
       const parts = line.split(/(fileurl:\/\/\S+)/)
 
@@ -142,11 +166,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       )
     }
 
-    return (
-      <span>
-        {line.startsWith("cmd://") ? line.replace("cmd://", "") : line}
-      </span>
-    )
+    return <span>{line}</span>
   }
 
   return (
@@ -165,7 +185,6 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
             className={cn(
               "whitespace-pre",
               line.startsWith("Error:") && "text-red-500",
-              // line.startsWith("cmd://") && "my-2"
             )}
           >
             {renderLine(line)}
@@ -175,20 +194,41 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
         {!searching ? (
           !isExecuting && (
             <div className="flex items-center whitespace-pre">
-              <span>{`${currentUser ?? ""}@${currentDirectory} $ `}</span>
-              <form onSubmit={handleInputSubmit} className="flex-grow">
-                <input
-                  ref={inputRef}
-                  name="command"
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  className="w-full bg-transparent outline-none"
-                  spellCheck={false}
-                  autoComplete="off"
-                  autoFocus
-                />
-              </form>
+              {inputMode ? (
+                <>
+                  <span>Input: </span>
+                  <form onSubmit={handleInputModeSubmit} className="flex-grow">
+                    <input
+                      ref={inputRef}
+                      name="input"
+                      value={input}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      className="w-full bg-transparent outline-none"
+                      spellCheck={false}
+                      autoComplete="off"
+                      autoFocus
+                    />
+                  </form>
+                </>
+              ) : (
+                <>
+                  <span>{`${currentUser ?? ""}@${currentDirectory} $ `}</span>
+                  <form onSubmit={handleInputSubmit} className="flex-grow">
+                    <input
+                      ref={inputRef}
+                      name="command"
+                      value={input}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      className="w-full bg-transparent outline-none"
+                      spellCheck={false}
+                      autoComplete="off"
+                      autoFocus
+                    />
+                  </form>
+                </>
+              )}
             </div>
           )
         ) : (

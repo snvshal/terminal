@@ -20,7 +20,7 @@ export const encrypt = async (payload: SessionPayload): Promise<string> => {
 }
 
 export const decrypt = async (
-  session: string | undefined = ""
+  session: string | undefined = "",
 ): Promise<SessionPayload | null> => {
   if (!session) return null
 
@@ -73,7 +73,7 @@ export const verifySession = cache(
     if (!session?.username) return null
 
     return { username: session.username as string }
-  }
+  },
 )
 
 export const getUsername = cache(async (): Promise<string | null> => {

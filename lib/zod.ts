@@ -39,8 +39,8 @@ export const ProjectSchema = z.object({
   title: z.string(),
   description: z.string(),
   technologies: z.array(z.string()),
-  link: z.string().url().optional(),
-  image: z.string().optional(),
+  link: z.string().url().optional().or(z.literal("")),
+  image: z.string().optional().or(z.literal("")),
 })
 
 export const ExperienceSchema = z.object({
