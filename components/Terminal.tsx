@@ -176,7 +176,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       initialPosition={initialPosition}
     >
       <div
-        className="h-full w-full overflow-y-auto p-4 font-mono text-sm text-zinc-100"
+        className="window-scrollbar h-full w-full overflow-y-auto p-4 font-mono text-sm text-zinc-100"
         ref={outputRef}
       >
         {output.map((line, index) => (

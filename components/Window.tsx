@@ -8,7 +8,6 @@ import {
   WindowSize,
   WindowHeaderProps,
 } from "@/types/props"
-// import { Circle } from 'lucide-react'
 
 export const initialWindowSize = { width: 600, height: 400 }
 
@@ -19,9 +18,12 @@ const WindowHeader: React.FC<WindowHeaderProps> = ({
   toggleFullScreen,
   onMouseDown,
   status,
+  isSmallScreen,
 }) => (
   <div
-    className="flex cursor-grab items-center justify-between bg-zinc-800 px-4 py-2 selection:bg-transparent active:cursor-grabbing"
+    className={`flex cursor-grab items-center justify-between bg-zinc-800 px-4 py-2 selection:bg-transparent ${
+      isSmallScreen ? "" : "active:cursor-grabbing"
+    }`}
     onMouseDown={onMouseDown}
   >
     <div className="group flex space-x-2.5">
@@ -39,10 +41,7 @@ const WindowHeader: React.FC<WindowHeaderProps> = ({
       />
     </div>
     <span className="font-semibold text-gray-500">{title}</span>
-    <span className="flex w-14 justify-end">
-      {/* <Circle className="size-4" /> */}
-      {status}
-    </span>
+    <span className="flex w-14 justify-end">{status}</span>
   </div>
 )
 
@@ -100,6 +99,7 @@ const Window: React.FC<WindowProps> = ({
   const [resizeDirection, setResizeDirection] = useState<string | null>(null)
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [lastPosition, setLastPosition] = useState(initialPosition)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
   const windowRef = useRef<HTMLDivElement>(null)
   const { toggleFullScreen } = useFullScreen()
 
@@ -126,6 +126,17 @@ const Window: React.FC<WindowProps> = ({
       })
     }
   }, [isFullScreen, position, lastPosition])
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 768)
+    }
+
+    handleResize()
+    window.addEventListener("resize", handleResize)
+
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -220,26 +231,9 @@ const Window: React.FC<WindowProps> = ({
     }
   }
 
-  useEffect(() => {
-    const resizeWindow = () => {
-      if (window.innerWidth < 768) {
-        setIsFullScreen(true)
-        setPosition({ x: 0, y: 0 })
-      } else {
-        setIsFullScreen(false)
-        setPosition(lastPosition)
-      }
-    }
-
-    resizeWindow()
-
-    window.addEventListener("resize", resizeWindow)
-    return () => window.removeEventListener("resize", resizeWindow)
-  }, [lastPosition])
-
   return (
     <>
-      {position.y <= 2 && (
+      {position.y <= 2 && isDragging && (
         <GlassyBlurSkeleton
           position={position}
           initialWindowSize={initialWindowSize}
@@ -248,24 +242,30 @@ const Window: React.FC<WindowProps> = ({
 
       <div
         ref={windowRef}
-        className="absolute overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-lg"
+        className={`absolute overflow-hidden border border-zinc-700 bg-zinc-900 ${
+          isSmallScreen ? "fixed inset-0" : "rounded-xl shadow-lg"
+        }`}
         style={{
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-          width: `${
-            isFullScreen
-              ? window.innerWidth
-              : size.width < 400
-                ? 400
-                : size.width
-          }px`,
-          height: `${
-            isFullScreen
-              ? window.innerHeight
-              : size.height < 250
-                ? 250
-                : size.height
-          }px`,
+          left: isSmallScreen ? 0 : `${position.x}px`,
+          top: isSmallScreen ? 0 : `${position.y}px`,
+          width: isSmallScreen
+            ? "100%"
+            : `${
+                isFullScreen
+                  ? window.innerWidth
+                  : size.width < 400
+                    ? 400
+                    : size.width
+              }px`,
+          height: isSmallScreen
+            ? "100%"
+            : `${
+                isFullScreen
+                  ? window.innerHeight
+                  : size.height < 250
+                    ? 250
+                    : size.height
+              }px`,
           borderRadius: isFullScreen ? "0" : undefined,
           transition: isDragging || isResizing ? "none" : "all 0.3s ease",
         }}
@@ -275,13 +275,14 @@ const Window: React.FC<WindowProps> = ({
           onClose={onClose}
           toggleWindowFullScreen={toggleWindowFullScreen}
           toggleFullScreen={toggleFullScreen}
-          onMouseDown={(e) => handleMouseDown(e, "drag")}
+          onMouseDown={(e) => !isSmallScreen && handleMouseDown(e, "drag")}
           status={status}
+          isSmallScreen={isSmallScreen}
         />
         <div className="h-[calc(100%-2.5rem)] overflow-hidden selection:bg-gray-500">
           {children}
         </div>
-        {!(position.x <= 0 && position.y <= 0) && (
+        {!isSmallScreen && (
           <ResizeHandles
             onMouseDown={(e, direction) =>
               handleMouseDown(e, "resize", direction)

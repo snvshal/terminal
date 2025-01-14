@@ -113,7 +113,7 @@ const Notepad: React.FC<NotepadProps> = ({ initialPosition, onClose }) => {
           value={content}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className="w-full flex-grow resize-none bg-zinc-900 p-4 font-mono text-zinc-100 outline-none"
+          className="window-scrollbar w-full flex-grow resize-none bg-zinc-900 p-4 font-mono text-zinc-100 outline-none"
           style={{ fontSize: `${zoom}%` }}
         />
         <div className="flex items-center justify-between bg-zinc-800 p-2 text-xs text-zinc-300">
