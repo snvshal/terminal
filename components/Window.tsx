@@ -99,7 +99,7 @@ const Window: React.FC<WindowProps> = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [resizeDirection, setResizeDirection] = useState<string | null>(null)
   const [isFullScreen, setIsFullScreen] = useState(false)
-  const [lastPosition, setLastPosition] = useState(initialPosition) // Update 3
+  const [lastPosition, setLastPosition] = useState(initialPosition)
   const windowRef = useRef<HTMLDivElement>(null)
   const { toggleFullScreen } = useFullScreen()
 
@@ -113,11 +113,11 @@ const Window: React.FC<WindowProps> = ({
       setSize(initialWindowSize)
       setPosition({
         x: Math.max(
-          0,
+          100,
           Math.min(lastPosition.x, window.innerWidth - initialWindowSize.width),
         ),
         y: Math.max(
-          0,
+          10,
           Math.min(
             lastPosition.y,
             window.innerHeight - initialWindowSize.height,
@@ -138,6 +138,10 @@ const Window: React.FC<WindowProps> = ({
           setPosition({
             x: e.clientX - initialWindowSize.width * xPercentage,
             y: e.clientY - initialWindowSize.height * yPercentage,
+          })
+          setDragOffset({
+            x: initialWindowSize.width * xPercentage,
+            y: initialWindowSize.height * yPercentage,
           })
         } else {
           setPosition({
@@ -298,7 +302,7 @@ const GlassyBlurSkeleton: React.FC<GlassyBlurSkeletonProps> = ({
 
   return (
     <div
-      className={`fixed border border-white/25 bg-gradient-to-br from-white/40 via-white/20 to-transparent shadow-2xl backdrop-blur-lg backdrop-filter transition-all duration-300 ease-in-out`}
+      className={`fixed border border-white/25 shadow-2xl backdrop-blur-lg backdrop-filter transition-all duration-300 ease-in-out`}
       style={{
         ...(position.y > 0
           ? {
@@ -314,16 +318,12 @@ const GlassyBlurSkeleton: React.FC<GlassyBlurSkeletonProps> = ({
             }),
         borderRadius,
         backdropFilter: `blur(${blur}px) saturate(150%)`,
-        background: `
-          linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)),
-          radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 70%)
-        `,
         backgroundColor: `rgba(255, 255, 255, ${opacity})`,
-        boxShadow: `
-          0 10px 30px rgba(0, 0, 0, 0.2),
-          inset 0 0 30px rgba(255, 255, 255, 0.2),
-          0 5px 10px rgba(0, 0, 0, 0.1)
-        `,
+        // boxShadow: `
+        //   0 10px 30px rgba(0, 0, 0, 0.2),
+        //   inset 0 0 30px rgba(255, 255, 255, 0.2),
+        //   0 5px 10px rgba(0, 0, 0, 0.1)
+        // `,
       }}
     />
   )
