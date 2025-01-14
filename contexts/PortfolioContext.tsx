@@ -7,17 +7,43 @@ import {
   Project,
   Experience,
   SocialLink,
+  Hobby,
+  Education,
 } from "@/types/schema"
 import {
   updatePortfolio as updatePortfolioAction,
   loadPortfolio as loadPortfolioAction,
 } from "@/app/actions"
 import { useFileSystem } from "./FileSystemContext"
+import {
+  SkillSchema,
+  ProjectSchema,
+  ExperienceSchema,
+  SocialLinkSchema,
+  HobbySchema,
+  EducationSchema,
+} from "@/lib/zod"
+
+type InputStep = {
+  field: string
+  prompt: string
+  optional?: boolean
+}
+
+type InputMode = {
+  type: "skill" | "project" | "experience" | "social" | "hobby" | "education"
+  steps: InputStep[]
+  currentStep: number
+  data: Record<string, string>
+}
 
 export type PortfolioContextType = {
   portfolio: Portfolio | null
   setPortfolio: React.Dispatch<React.SetStateAction<Portfolio | null>>
   executePortfolioCommand: (command: string) => Promise<string[]>
+  inputMode: InputMode | null
+  setInputMode: React.Dispatch<React.SetStateAction<InputMode | null>>
+  handleInputStep: (input: string) => Promise<string[]>
 }
 
 export const PortfolioContext = createContext<PortfolioContextType | undefined>(
@@ -36,15 +62,15 @@ export const PortfolioProvider: React.FC<{
   children: React.ReactNode
 }> = ({ children }) => {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
-  const { currentUser, setCurrentDirectory } = useFileSystem()
+  const [inputMode, setInputMode] = useState<InputMode | null>(null)
+  const { currentUser, setCurrentDirectory, setSearching } = useFileSystem()
 
   useEffect(() => {
     const fetchPortfolio = async () => {
-      if (!currentUser) return // Ensure there's a current user
+      if (!currentUser) return
       try {
         const loadedPortfolio = await loadPortfolioAction()
         setPortfolio(loadedPortfolio)
-        console.log("Loaded portfolio:", loadedPortfolio)
       } catch (error) {
         console.error("Error fetching portfolio:", error)
       }
@@ -68,7 +94,7 @@ export const PortfolioProvider: React.FC<{
       case "edit":
         return editPortfolio(args[0], args.slice(1).join(" "))
       case "add":
-        return addItem(args[0], args.slice(1).join(" "))
+        return startAddItem(args[0])
       case "remove":
         return removeItem(args[0], args.slice(1).join(" "))
       case "save":
@@ -82,6 +108,257 @@ export const PortfolioProvider: React.FC<{
         return exitPortfolio()
       default:
         return [`Error: Unknown portfolio command: ${cmd}`]
+    }
+  }
+
+  const startAddItem = (section: string): string[] => {
+    if (!section) {
+      return ["Error: Section is required. Usage: add <section>"]
+    }
+
+    let steps: InputStep[] = []
+    switch (section) {
+      case "skill":
+        steps = [
+          { field: "name", prompt: "Enter skill name:" },
+          {
+            field: "level",
+            prompt:
+              "Enter skill level (Beginner, Intermediate etc) (optional):",
+            optional: true,
+          },
+        ]
+        break
+      case "project":
+        steps = [
+          { field: "title", prompt: "Enter project title:" },
+          { field: "description", prompt: "Enter project description:" },
+          {
+            field: "technologies",
+            prompt: "Enter technologies (comma-separated):",
+          },
+          {
+            field: "link",
+            prompt: "Enter project link (optional):",
+            optional: true,
+          },
+          {
+            field: "image",
+            prompt: "Enter project image link (optional):",
+            optional: true,
+          },
+        ]
+        break
+      case "experience":
+        steps = [
+          { field: "role", prompt: "Enter role:" },
+          { field: "company", prompt: "Enter company:" },
+          { field: "description", prompt: "Enter description:" },
+          { field: "startDate", prompt: "Enter start date (YYYY-MM-DD):" },
+          {
+            field: "endDate",
+            prompt: "Enter end date (YYYY-MM-DD or 'present'):",
+            optional: true,
+          },
+        ]
+        break
+      case "social":
+        steps = [
+          { field: "platform", prompt: "Enter social platform:" },
+          { field: "url", prompt: "Enter social link URL:" },
+        ]
+        break
+      case "hobby":
+        steps = [
+          { field: "name", prompt: "Enter hobby name:" },
+          {
+            field: "description",
+            prompt: "Enter hobby description (optional):",
+            optional: true,
+          },
+        ]
+        break
+      case "education":
+        steps = [
+          { field: "institution", prompt: "Enter institution name:" },
+          { field: "degree", prompt: "Enter degree:" },
+          { field: "fieldOfStudy", prompt: "Enter field of study:" },
+          { field: "startDate", prompt: "Enter start date (YYYY-MM-DD):" },
+          {
+            field: "endDate",
+            prompt: "Enter end date (YYYY-MM-DD or 'present'):",
+            optional: true,
+          },
+          {
+            field: "description",
+            prompt: "Enter description (optional):",
+            optional: true,
+          },
+        ]
+        break
+      default:
+        return [`Error: Unknown section: ${section}`]
+    }
+
+    setInputMode({
+      type: section as
+        | "skill"
+        | "project"
+        | "experience"
+        | "social"
+        | "hobby"
+        | "education",
+      steps,
+      currentStep: 0,
+      data: {},
+    })
+
+    return [steps[0].prompt]
+  }
+
+  const handleInputStep = async (input: string): Promise<string[]> => {
+    if (!inputMode) return ["Error: Not in input mode"]
+
+    const { type, steps, currentStep, data } = inputMode
+    const currentField = steps[currentStep].field
+
+    if (input.trim() || steps[currentStep].optional) {
+      data[currentField] = input.trim()
+
+      if (currentStep + 1 < steps.length) {
+        setInputMode({
+          ...inputMode,
+          currentStep: currentStep + 1,
+          data,
+        })
+        return [steps[currentStep + 1].prompt]
+      } else {
+        // All steps completed, validate and add the item
+        const validationResult = validateItem(type, data)
+        if (validationResult.success) {
+          const result = await addItem(type, validationResult.data)
+          setInputMode(null)
+          return result
+        } else {
+          setInputMode(null)
+          return [`Error: Invalid inputs. ${validationResult.error.message}`]
+        }
+      }
+    } else {
+      return ["Error: This field is required. Please enter a value."]
+    }
+  }
+
+  const validateItem = (
+    type: "skill" | "project" | "experience" | "social" | "hobby" | "education",
+    data: Record<string, string>,
+  ):
+    | {
+        success: true
+        data: Skill | Project | Experience | SocialLink | Hobby | Education
+      }
+    | { success: false; error: Error } => {
+    switch (type) {
+      case "skill":
+        return SkillSchema.safeParse(data) as
+          | { success: true; data: Skill }
+          | { success: false; error: Error }
+      case "project":
+        const projectData = {
+          ...data,
+          technologies: data.technologies.split(",").map((t) => t.trim()),
+          link: data.link || undefined,
+          image: data.image || undefined,
+        }
+        return ProjectSchema.safeParse(projectData) as
+          | { success: true; data: Project }
+          | { success: false; error: Error }
+      case "experience":
+        return ExperienceSchema.safeParse({
+          ...data,
+          startDate: new Date(data.startDate),
+          endDate:
+            data.endDate === "present" ? undefined : new Date(data.endDate),
+        }) as
+          | { success: true; data: Experience }
+          | { success: false; error: Error }
+      case "social":
+        return SocialLinkSchema.safeParse(data) as
+          | { success: true; data: SocialLink }
+          | { success: false; error: Error }
+      case "hobby":
+        return HobbySchema.safeParse(data) as
+          | { success: true; data: Hobby }
+          | { success: false; error: Error }
+      case "education":
+        return EducationSchema.safeParse({
+          ...data,
+          startDate: new Date(data.startDate),
+          endDate:
+            data.endDate === "present" ? undefined : new Date(data.endDate),
+        }) as
+          | { success: true; data: Education }
+          | { success: false; error: Error }
+      default:
+        return { success: false, error: new Error("Unknown item type") }
+    }
+  }
+
+  const addItem = async (
+    section:
+      | "skill"
+      | "project"
+      | "experience"
+      | "social"
+      | "hobby"
+      | "education",
+    data: Skill | Project | Experience | SocialLink | Hobby | Education,
+  ): Promise<string[]> => {
+    if (!portfolio) return ["Error: Portfolio not loaded"]
+
+    switch (section) {
+      case "skill":
+        setPortfolio({
+          ...portfolio,
+          skills: [...portfolio.skills, data as Skill],
+        })
+        return [`Skill "${(data as Skill).name}" submitted successfully`]
+      case "project":
+        setPortfolio({
+          ...portfolio,
+          projects: [...portfolio.projects, data as Project],
+        })
+        return [`Project "${(data as Project).title}" submitted successfully`]
+      case "experience":
+        setPortfolio({
+          ...portfolio,
+          experiences: [...portfolio.experiences, data as Experience],
+        })
+        return [
+          `Experience "${(data as Experience).role} at ${(data as Experience).company}" submitted successfully`,
+        ]
+      case "social":
+        setPortfolio({
+          ...portfolio,
+          socialLinks: [...portfolio.socialLinks, data as SocialLink],
+        })
+        return [
+          `Social link for ${(data as SocialLink).platform} submitted successfully`,
+        ]
+      case "hobby":
+        setPortfolio({
+          ...portfolio,
+          hobbies: [...portfolio.hobbies, data as Hobby],
+        })
+        return [`Hobby "${(data as Hobby).name}" submitted successfully`]
+      case "education":
+        setPortfolio({
+          ...portfolio,
+          education: [...portfolio.education, data as Education],
+        })
+        return [
+          `Education at "${(data as Education).institution}" submitted successfully`,
+        ]
     }
   }
 
@@ -103,7 +380,8 @@ export const PortfolioProvider: React.FC<{
         `- Email:            ${portfolio.email || "Not set"}`,
         `- Avatar:           ${portfolio.avatar ? "fileurl://" + portfolio.avatar : "Not set"}`,
         "                                                   ",
-        "Use 'view <section>' to see details of skills, projects, experiences, or social links.",
+        "Use 'view <section>' to see details:",
+        "example: view [skills, projects, experiences, or social links]",
       ]
     }
 
@@ -112,25 +390,27 @@ export const PortfolioProvider: React.FC<{
         return [
           "Skills:",
           ...portfolio.skills.flatMap((skill) => [
-            `- Name:             ${skill.name}`,
-            `- Level:            ${skill.level ? `${skill.level}` : "Not set"}`,
+            `- ${skill.name}:       ${skill.level ? `${skill.level}` : ""}`,
           ]),
         ]
       case "projects":
         return [
           "Projects:",
-          ...portfolio.projects.flatMap((project) => [
+          ...portfolio.projects.flatMap((project, index) => [
+            `Project ${index + 1}:`,
             `- Title:            ${project.title}`,
             `- Description:      ${project.description}`,
             `- Technologies:     ${project.technologies}`,
-            `- Technologies:     ${project.link ? "fileurl://" + project.link : "Not set"}`,
+            `- Link:             ${project.link ? "fileurl://" + project.link : "Not set"}`,
             `- Image:            ${project.image ? "fileurl://" + project.image : "Not set"}`,
+            `                     `,
           ]),
         ]
       case "experiences":
         return [
           "Experiences:",
           ...portfolio.experiences.flatMap((exp) => [
+            `${exp.role} at ${exp.company}:`,
             `- Role:             ${exp.role}`,
             `- Company:          ${exp.company}`,
             `- Description:      ${exp.description} `,
@@ -142,8 +422,27 @@ export const PortfolioProvider: React.FC<{
         return [
           "Social Links:",
           ...portfolio.socialLinks.flatMap((link) => [
-            `- Platform:         ${link.platform}`,
-            `- Link:             ${"fileurl://" + link.url}`,
+            `- ${link.platform}:      ${"fileurl://" + link.url}`,
+          ]),
+        ]
+      case "hobbies":
+        return [
+          "Hobbies:",
+          ...portfolio.hobbies.flatMap((hobby) => [
+            `- ${hobby.name}:       ${hobby.description || ""}`,
+          ]),
+        ]
+      case "education":
+        return [
+          "Education:",
+          ...portfolio.education.flatMap((edu) => [
+            `${edu.degree} in ${edu.fieldOfStudy} at ${edu.institution}:`,
+            `- Institution:      ${edu.institution}`,
+            `- Degree:           ${edu.degree}`,
+            `- Field of Study:   ${edu.fieldOfStudy}`,
+            `- Start Date:       ${edu.startDate}`,
+            `- End Date:         ${edu.endDate || "Present"}`,
+            `- Description:      ${edu.description || "Not provided"}`,
           ]),
         ]
       default:
@@ -153,9 +452,7 @@ export const PortfolioProvider: React.FC<{
 
   const editPortfolio = (field: string, value: string): string[] => {
     if (!portfolio) return ["Error: Portfolio not loaded"]
-    if (!field || !value) {
-      return [`Error: ${!field ? "Field" : "Value"} is required`]
-    }
+    if (!field) return [`Error: Field is required`]
 
     switch (field) {
       case "name":
@@ -163,68 +460,11 @@ export const PortfolioProvider: React.FC<{
       case "bio":
       case "email":
       case "avatar":
+        if (!value) return [`Error: The value for '${field}' is required`]
         setPortfolio({ ...portfolio, [field]: value })
         return [`Updated ${field} to: ${value}`]
       default:
-        return [
-          `Error: Cannot edit ${field} directly. Use 'add' or 'remove' commands for complex fields.`,
-        ]
-    }
-  }
-
-  const addItem = (section: string, itemData: string): string[] => {
-    if (!portfolio) return ["Error: Portfolio not loaded"]
-    if (!section || !itemData) {
-      return [`Error: ${!section ? "Section" : "Item data"} is required`]
-    }
-
-    switch (section) {
-      case "skill":
-        const [skillName, skillLevel] = itemData.split(",").map((s) => s.trim())
-        const newSkill: Skill = { name: skillName, level: skillLevel }
-        setPortfolio({ ...portfolio, skills: [...portfolio.skills, newSkill] })
-        return [
-          `Added skill: ${skillName}${skillLevel ? ` (${skillLevel})` : ""}`,
-        ]
-      case "project":
-        const [projectTitle, ...projectDesc] = itemData
-          .split(",")
-          .map((s) => s.trim())
-        const newProject: Project = {
-          title: projectTitle,
-          description: projectDesc.join(", "),
-          technologies: [],
-        }
-        setPortfolio({
-          ...portfolio,
-          projects: [...portfolio.projects, newProject],
-        })
-        return [`Added project: ${projectTitle}`]
-      case "experience":
-        const [role, company, description] = itemData
-          .split(",")
-          .map((s) => s.trim())
-        const newExperience: Experience = {
-          role,
-          company,
-          description,
-          startDate: new Date(),
-        }
-        setPortfolio({
-          ...portfolio,
-          experiences: [...portfolio.experiences, newExperience],
-        })
-        return [`Added experience: ${role} at ${company}`]
-      case "social":
-        const [platform, url] = itemData.split(",").map((s) => s.trim())
-        const newSocialLink: SocialLink = { platform, url }
-        setPortfolio({
-          ...portfolio,
-          socialLinks: [...portfolio.socialLinks, newSocialLink],
-        })
-        return [`Added social link: ${platform}`]
-      default:
-        return [`Error: Unknown section: ${section}`]
+        return [`Error: Field '${field}' not found`]
     }
   }
 
@@ -264,17 +504,51 @@ export const PortfolioProvider: React.FC<{
           ),
         })
         return [`Removed social link: ${itemIdentifier}`]
+      case "hobby":
+        setPortfolio({
+          ...portfolio,
+          hobbies: portfolio.hobbies.filter(
+            (hobby) => hobby.name !== itemIdentifier,
+          ),
+        })
+        return [`Removed hobby: ${itemIdentifier}`]
+      case "education":
+        setPortfolio({
+          ...portfolio,
+          education: portfolio.education.filter(
+            (edu) => edu.institution !== itemIdentifier,
+          ),
+        })
+        return [`Removed education: ${itemIdentifier}`]
       default:
         return [`Error: Unknown section: ${section}`]
     }
   }
 
+  const preparePortfolioForSave = (portfolio: Portfolio): Portfolio => {
+    return {
+      ...portfolio,
+      experiences: portfolio.experiences.map((experience) => ({
+        ...experience,
+        startDate: new Date(experience.startDate),
+        endDate: experience.endDate ? new Date(experience.endDate) : undefined,
+      })),
+      education: portfolio.education.map((edu) => ({
+        ...edu,
+        startDate: new Date(edu.startDate),
+        endDate: edu.endDate ? new Date(edu.endDate) : undefined,
+      })),
+    }
+  }
+
   const savePortfolio = async (): Promise<string[]> => {
-    if (!currentUser) return ["Signin to save portfolio"]
     if (!portfolio) return ["Error: No changes to save"]
     try {
-      await updatePortfolioAction(portfolio)
-      return ["Portfolio saved successfully"]
+      setSearching("Saving portfolio")
+      const preparedPortfolio = preparePortfolioForSave(portfolio)
+      const { message } = await updatePortfolioAction(preparedPortfolio)
+      setSearching(null)
+      return [message]
     } catch (error) {
       return [`Error saving portfolio: ${error}`]
     }
@@ -284,7 +558,7 @@ export const PortfolioProvider: React.FC<{
     const commands = [
       [
         "view [section]",
-        "View portfolio or specific section (skills, projects, experiences, social)",
+        "View portfolio or specific section (skills, projects, experiences, social, hobbies, education)",
       ],
       [
         "edit <field> <value>",
@@ -292,12 +566,12 @@ export const PortfolioProvider: React.FC<{
       ],
       [
         "add <section> <data>",
-        "Add item to a section (skill, project, experience, social)",
+        "Add item to a section (skill, project, experience, social, hobby, education)",
       ],
       ["remove <section> <identifier>", "Remove item from a section"],
       ["save", "Save changes to the portfolio"],
-      ["help", "Display this help message"],
       ["clear/cls", "Clear the terminal screen"],
+      ["help", "Display this help message"],
     ]
 
     const output = [
@@ -313,7 +587,14 @@ export const PortfolioProvider: React.FC<{
 
   return (
     <PortfolioContext.Provider
-      value={{ executePortfolioCommand, portfolio, setPortfolio }}
+      value={{
+        executePortfolioCommand,
+        portfolio,
+        setPortfolio,
+        inputMode,
+        setInputMode,
+        handleInputStep,
+      }}
     >
       {children}
     </PortfolioContext.Provider>

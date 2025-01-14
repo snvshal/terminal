@@ -31,4 +31,5 @@ export type WindowHeaderProps = {
   toggleFullScreen: () => void
   onMouseDown: (e: React.MouseEvent) => void
   status?: React.ReactElement
+  isSmallScreen: boolean
 }

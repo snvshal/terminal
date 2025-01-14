@@ -2,8 +2,10 @@ import { z } from "zod"
 import { Document } from "mongoose"
 import {
   DirectoryItemSchema,
+  EducationSchema,
   ExperienceSchema,
   FileItemSchema,
+  HobbySchema,
   PortfolioSchema,
   ProjectSchema,
   SkillSchema,
@@ -22,6 +24,8 @@ export type SocialLink = z.infer<typeof SocialLinkSchema>
 export type Project = z.infer<typeof ProjectSchema>
 export type Experience = z.infer<typeof ExperienceSchema>
 export type Skill = z.infer<typeof SkillSchema>
+export type Hobby = z.infer<typeof HobbySchema>
+export type Education = z.infer<typeof EducationSchema>
 export type Portfolio = z.infer<typeof PortfolioSchema>
 
 export type FileSystemNode = DirectoryItem | FileItem | UrlItem

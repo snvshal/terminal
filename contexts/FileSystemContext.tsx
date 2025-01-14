@@ -25,6 +25,7 @@ export type FileSystemContextType = {
   currentUser: string | null
   setCurrentUser: (username: string | null) => void
   searching: string | null
+  setSearching: React.Dispatch<React.SetStateAction<string | null>>
   openNotepad: boolean
   setOpenNotepad: React.Dispatch<React.SetStateAction<boolean>>
   editFile: { filename: string; content: string } | null
@@ -123,7 +124,7 @@ export const FileSystemProvider: React.FC<{
 
   const userPortfolio = (): string => {
     if (!currentUser) return "Signin to view your portfolio"
-    setCurrentDirectory(`${currentUser}@portfolio`)
+    setCurrentDirectory("portfolio")
     return "Entering portfolio environment. Type 'help' for available commands."
   }
 
@@ -442,6 +443,7 @@ export const FileSystemProvider: React.FC<{
         currentUser,
         setCurrentUser,
         searching,
+        setSearching,
         openNotepad,
         setOpenNotepad,
         setEditFile,

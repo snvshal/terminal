@@ -1,6 +1,5 @@
 "use server"
 
-import { calculateObjectSize } from "bson"
 import dbConnect from "../lib/db"
 import { User } from "../models/User"
 import bcrypt from "bcrypt"
@@ -62,7 +61,10 @@ export const signUp = async (
     return { success: true, message: ["Your account has been created"] }
   } catch (error) {
     console.error("Error during sign up:", error)
-    return { success: false, message: ["An error occurred during sign up"] }
+    return {
+      success: false,
+      message: ["Error: An error occurred during sign up"],
+    }
   }
 }
 
@@ -78,13 +80,16 @@ export const signIn = async (
     if (!user) {
       return {
         success: false,
-        message: "Login failed: user not found",
+        message: "Error: Login failed: user not found",
       }
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password)
     if (!isPasswordValid) {
-      return { success: false, message: "Login failed: invalid password" }
+      return {
+        success: false,
+        message: "Error: Login failed: invalid password",
+      }
     }
 
     await createSession(username)
@@ -92,7 +97,10 @@ export const signIn = async (
     return { success: true, message: user.username }
   } catch (error) {
     console.error("Error during sign in:", error)
-    return { success: false, message: "Login failed: error during sign in" }
+    return {
+      success: false,
+      message: "Error: Login failed: error during sign in",
+    }
   }
 }
 
@@ -105,7 +113,10 @@ export const signOut = async (): Promise<{
     return { success: true, message: "You have been signed out!" }
   } catch (error) {
     console.error("Error during sign out:", error)
-    return { success: false, message: "An error occurred during sign out" }
+    return {
+      success: false,
+      message: "Error: An error occurred during sign out",
+    }
   }
 }
 
@@ -165,13 +176,13 @@ export const getUserByUsername = async (
   }
 }
 
-export async function calculateSize(data: FileSystemNode): Promise<number> {
+export async function calculateSize(data: string): Promise<number> {
   try {
-    if (!data || typeof data !== "object") {
-      throw new Error("Invalid input: data must be a FileSystemNode object.")
+    if (typeof data !== "string") {
+      throw new Error("Invalid input: data must be a string.")
     }
 
-    return calculateObjectSize(data)
+    return Buffer.byteLength(data, "utf-8")
   } catch (error) {
     console.error("Error calculating size:", error)
     throw error
@@ -440,7 +451,7 @@ export const updateFileContent = async (
     file.content = content
     file.lastModified = new Date()
 
-    const updatedSize = await calculateSize(file as FileItem)
+    const updatedSize = await calculateSize(file.content)
     const diff = updatedSize - file.size
     file.size = updatedSize
 
@@ -474,7 +485,7 @@ export const setFileUrl = async (
       urlItem.url = url
       urlItem.lastModified = new Date()
 
-      const updatedSize = await calculateSize(urlItem as UrlItem)
+      const updatedSize = await calculateSize(urlItem.url)
       const diff = updatedSize - urlItem.size
 
       urlItem.size = updatedSize
@@ -495,13 +506,7 @@ export const setFileUrl = async (
       return `Error: An item with the name '${filename}' already exists in the current directory`
     }
 
-    const urlSize = await calculateSize({
-      name: filename,
-      location,
-      url,
-      size: 0,
-      lastModified: new Date(),
-    } as FileSystemNode)
+    const urlSize = await calculateSize(url)
 
     const newUrlItem: UrlItem = {
       name: filename,
