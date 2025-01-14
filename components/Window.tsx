@@ -220,6 +220,23 @@ const Window: React.FC<WindowProps> = ({
     }
   }
 
+  useEffect(() => {
+    const resizeWindow = () => {
+      if (window.innerWidth < 768) {
+        setIsFullScreen(true)
+        setPosition({ x: 0, y: 0 })
+      } else {
+        setIsFullScreen(false)
+        setPosition(lastPosition)
+      }
+    }
+
+    resizeWindow()
+
+    window.addEventListener("resize", resizeWindow)
+    return () => window.removeEventListener("resize", resizeWindow)
+  }, [lastPosition])
+
   return (
     <>
       {position.y <= 2 && (
