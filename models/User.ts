@@ -7,6 +7,8 @@ import {
   Project,
   Experience,
   Skill,
+  Hobby,
+  Education,
 } from "../types/schema"
 
 const DirectoryItemSchema = new mongoose.Schema({
@@ -65,6 +67,20 @@ const SkillSchema = new mongoose.Schema<Skill>({
   level: { type: String },
 })
 
+const HobbySchema = new mongoose.Schema<Hobby>({
+  name: { type: String, required: true },
+  description: { type: String },
+})
+
+const EducationSchema = new mongoose.Schema<Education>({
+  institution: { type: String, required: true },
+  degree: { type: String, required: true },
+  fieldOfStudy: { type: String, required: true },
+  startDate: { type: Date, required: true },
+  endDate: { type: Date },
+  description: { type: String },
+})
+
 const PortfolioSchema = new mongoose.Schema<Portfolio>({
   name: { type: String, required: true },
   title: { type: String, required: true },
@@ -75,6 +91,8 @@ const PortfolioSchema = new mongoose.Schema<Portfolio>({
   skills: [SkillSchema],
   projects: [ProjectSchema],
   experiences: [ExperienceSchema],
+  hobbies: [HobbySchema],
+  education: [EducationSchema],
 })
 
 const UserSchema = new mongoose.Schema<UserProfile>(

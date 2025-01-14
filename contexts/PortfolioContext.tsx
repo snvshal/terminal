@@ -7,6 +7,8 @@ import {
   Project,
   Experience,
   SocialLink,
+  Hobby,
+  Education,
 } from "@/types/schema"
 import {
   updatePortfolio as updatePortfolioAction,
@@ -18,6 +20,8 @@ import {
   ProjectSchema,
   ExperienceSchema,
   SocialLinkSchema,
+  HobbySchema,
+  EducationSchema,
 } from "@/lib/zod"
 
 type InputStep = {
@@ -27,7 +31,7 @@ type InputStep = {
 }
 
 type InputMode = {
-  type: "skill" | "project" | "experience" | "social"
+  type: "skill" | "project" | "experience" | "social" | "hobby" | "education"
   steps: InputStep[]
   currentStep: number
   data: Record<string, string>
@@ -119,7 +123,8 @@ export const PortfolioProvider: React.FC<{
           { field: "name", prompt: "Enter skill name:" },
           {
             field: "level",
-            prompt: "Enter skill level (optional):",
+            prompt:
+              "Enter skill level (Beginner, Intermediate etc) (optional):",
             optional: true,
           },
         ]
@@ -163,12 +168,46 @@ export const PortfolioProvider: React.FC<{
           { field: "url", prompt: "Enter social link URL:" },
         ]
         break
+      case "hobby":
+        steps = [
+          { field: "name", prompt: "Enter hobby name:" },
+          {
+            field: "description",
+            prompt: "Enter hobby description (optional):",
+            optional: true,
+          },
+        ]
+        break
+      case "education":
+        steps = [
+          { field: "institution", prompt: "Enter institution name:" },
+          { field: "degree", prompt: "Enter degree:" },
+          { field: "fieldOfStudy", prompt: "Enter field of study:" },
+          { field: "startDate", prompt: "Enter start date (YYYY-MM-DD):" },
+          {
+            field: "endDate",
+            prompt: "Enter end date (YYYY-MM-DD or 'present'):",
+            optional: true,
+          },
+          {
+            field: "description",
+            prompt: "Enter description (optional):",
+            optional: true,
+          },
+        ]
+        break
       default:
         return [`Error: Unknown section: ${section}`]
     }
 
     setInputMode({
-      type: section as "skill" | "project" | "experience" | "social",
+      type: section as
+        | "skill"
+        | "project"
+        | "experience"
+        | "social"
+        | "hobby"
+        | "education",
       steps,
       currentStep: 0,
       data: {},
@@ -211,10 +250,13 @@ export const PortfolioProvider: React.FC<{
   }
 
   const validateItem = (
-    type: "skill" | "project" | "experience" | "social",
+    type: "skill" | "project" | "experience" | "social" | "hobby" | "education",
     data: Record<string, string>,
   ):
-    | { success: true; data: Skill | Project | Experience | SocialLink }
+    | {
+        success: true
+        data: Skill | Project | Experience | SocialLink | Hobby | Education
+      }
     | { success: false; error: Error } => {
     switch (type) {
       case "skill":
@@ -244,14 +286,33 @@ export const PortfolioProvider: React.FC<{
         return SocialLinkSchema.safeParse(data) as
           | { success: true; data: SocialLink }
           | { success: false; error: Error }
+      case "hobby":
+        return HobbySchema.safeParse(data) as
+          | { success: true; data: Hobby }
+          | { success: false; error: Error }
+      case "education":
+        return EducationSchema.safeParse({
+          ...data,
+          startDate: new Date(data.startDate),
+          endDate:
+            data.endDate === "present" ? undefined : new Date(data.endDate),
+        }) as
+          | { success: true; data: Education }
+          | { success: false; error: Error }
       default:
         return { success: false, error: new Error("Unknown item type") }
     }
   }
 
   const addItem = async (
-    section: "skill" | "project" | "experience" | "social",
-    data: Skill | Project | Experience | SocialLink,
+    section:
+      | "skill"
+      | "project"
+      | "experience"
+      | "social"
+      | "hobby"
+      | "education",
+    data: Skill | Project | Experience | SocialLink | Hobby | Education,
   ): Promise<string[]> => {
     if (!portfolio) return ["Error: Portfolio not loaded"]
 
@@ -284,6 +345,20 @@ export const PortfolioProvider: React.FC<{
         return [
           `Social link for ${(data as SocialLink).platform} submitted successfully`,
         ]
+      case "hobby":
+        setPortfolio({
+          ...portfolio,
+          hobbies: [...portfolio.hobbies, data as Hobby],
+        })
+        return [`Hobby "${(data as Hobby).name}" submitted successfully`]
+      case "education":
+        setPortfolio({
+          ...portfolio,
+          education: [...portfolio.education, data as Education],
+        })
+        return [
+          `Education at "${(data as Education).institution}" submitted successfully`,
+        ]
     }
   }
 
@@ -315,8 +390,7 @@ export const PortfolioProvider: React.FC<{
         return [
           "Skills:",
           ...portfolio.skills.flatMap((skill) => [
-            `- Name:             ${skill.name}`,
-            `- Level:            ${skill.level ? `${skill.level}` : "Not set"}`,
+            `- ${skill.name}:       ${skill.level ? `${skill.level}` : ""}`,
           ]),
         ]
       case "projects":
@@ -336,6 +410,7 @@ export const PortfolioProvider: React.FC<{
         return [
           "Experiences:",
           ...portfolio.experiences.flatMap((exp) => [
+            `${exp.role} at ${exp.company}:`,
             `- Role:             ${exp.role}`,
             `- Company:          ${exp.company}`,
             `- Description:      ${exp.description} `,
@@ -347,7 +422,27 @@ export const PortfolioProvider: React.FC<{
         return [
           "Social Links:",
           ...portfolio.socialLinks.flatMap((link) => [
-            `- ${link.platform}:      ${"fileurl://" + link.url}   `,
+            `- ${link.platform}:      ${"fileurl://" + link.url}`,
+          ]),
+        ]
+      case "hobbies":
+        return [
+          "Hobbies:",
+          ...portfolio.hobbies.flatMap((hobby) => [
+            `- ${hobby.name}:       ${hobby.description || ""}`,
+          ]),
+        ]
+      case "education":
+        return [
+          "Education:",
+          ...portfolio.education.flatMap((edu) => [
+            `${edu.degree} in ${edu.fieldOfStudy} at ${edu.institution}:`,
+            `- Institution:      ${edu.institution}`,
+            `- Degree:           ${edu.degree}`,
+            `- Field of Study:   ${edu.fieldOfStudy}`,
+            `- Start Date:       ${edu.startDate}`,
+            `- End Date:         ${edu.endDate || "Present"}`,
+            `- Description:      ${edu.description || "Not provided"}`,
           ]),
         ]
       default:
@@ -409,6 +504,22 @@ export const PortfolioProvider: React.FC<{
           ),
         })
         return [`Removed social link: ${itemIdentifier}`]
+      case "hobby":
+        setPortfolio({
+          ...portfolio,
+          hobbies: portfolio.hobbies.filter(
+            (hobby) => hobby.name !== itemIdentifier,
+          ),
+        })
+        return [`Removed hobby: ${itemIdentifier}`]
+      case "education":
+        setPortfolio({
+          ...portfolio,
+          education: portfolio.education.filter(
+            (edu) => edu.institution !== itemIdentifier,
+          ),
+        })
+        return [`Removed education: ${itemIdentifier}`]
       default:
         return [`Error: Unknown section: ${section}`]
     }
@@ -421,6 +532,11 @@ export const PortfolioProvider: React.FC<{
         ...experience,
         startDate: new Date(experience.startDate),
         endDate: experience.endDate ? new Date(experience.endDate) : undefined,
+      })),
+      education: portfolio.education.map((edu) => ({
+        ...edu,
+        startDate: new Date(edu.startDate),
+        endDate: edu.endDate ? new Date(edu.endDate) : undefined,
       })),
     }
   }
@@ -442,7 +558,7 @@ export const PortfolioProvider: React.FC<{
     const commands = [
       [
         "view [section]",
-        "View portfolio or specific section (skills, projects, experiences, social)",
+        "View portfolio or specific section (skills, projects, experiences, social, hobbies, education)",
       ],
       [
         "edit <field> <value>",
@@ -450,7 +566,7 @@ export const PortfolioProvider: React.FC<{
       ],
       [
         "add <section> <data>",
-        "Add item to a section (skill, project, experience, social)",
+        "Add item to a section (skill, project, experience, social, hobby, education)",
       ],
       ["remove <section> <identifier>", "Remove item from a section"],
       ["save", "Save changes to the portfolio"],

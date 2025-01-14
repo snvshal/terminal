@@ -56,6 +56,20 @@ export const SkillSchema = z.object({
   level: z.string().optional(),
 })
 
+export const HobbySchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+})
+
+export const EducationSchema = z.object({
+  institution: z.string(),
+  degree: z.string(),
+  fieldOfStudy: z.string(),
+  startDate: z.date(),
+  endDate: z.date().optional(),
+  description: z.string().optional(),
+})
+
 export const PortfolioSchema = z.object({
   name: z.string(),
   title: z.string(),
@@ -66,6 +80,8 @@ export const PortfolioSchema = z.object({
   skills: z.array(SkillSchema),
   projects: z.array(ProjectSchema),
   experiences: z.array(ExperienceSchema),
+  hobbies: z.array(HobbySchema),
+  education: z.array(EducationSchema),
 })
 
 export const UserProfileSchema = z.object({
