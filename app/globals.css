@@ -18,21 +18,20 @@
   }
 }
 
-::-webkit-scrollbar {
+.window-scrollbar::-webkit-scrollbar {
   width: 4px;
   height: 4px;
 }
 
-::-webkit-scrollbar-track {
+.window-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+.window-scrollbar::-webkit-scrollbar-thumb {
   background: #cccacf;
   border-radius: 0px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.window-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #eae8ed;
 }
-
