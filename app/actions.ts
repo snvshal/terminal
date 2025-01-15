@@ -32,6 +32,8 @@ export const signUp = async (
         skills: [],
         projects: [],
         experiences: [],
+        hobbies: [],
+        education: [],
       },
     })
 
