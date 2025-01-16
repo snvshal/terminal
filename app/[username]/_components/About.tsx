@@ -191,7 +191,7 @@ const AboutPage: React.FC = () => {
             <li>
               Edit basic information:{" "}
               <code className="rounded bg-zinc-800 px-2 py-1">
-                edit name [Your Name]
+                edit name &lt;Your Name&gt;
               </code>
             </li>
             <li>
@@ -235,9 +235,9 @@ const AboutPage: React.FC = () => {
           </h2>
           <p className="mb-4 text-zinc-300">
             Your portfolio consists of several sections, each with specific
-            commands for viewing, adding, editing, and removing items. Here's a
-            detailed explanation of each portfolio item and its related
-            commands:
+            commands for viewing, adding, editing, and removing items.
+            Here&#39;s a detailed explanation of each portfolio item and its
+            related commands:
           </p>
 
           <div className="space-y-6">
@@ -258,7 +258,7 @@ const AboutPage: React.FC = () => {
                   </code>{" "}
                   (e.g.,{" "}
                   <code className="rounded bg-zinc-800 px-2 py-1">
-                    edit name "John Doe"
+                    edit name John Doe
                   </code>
                   )
                 </li>
@@ -473,7 +473,8 @@ const AboutPage: React.FC = () => {
               Use the up arrow key to quickly access and edit previous commands.
             </li>
             <li>
-              Use the 'help' command for quick reference to available commands.
+              Use the &#39;help&#39; command for quick reference to available
+              commands.
             </li>
             <li>Try different portfolio templates to showcase your skills.</li>
             <li>Update your portfolio regularly with your latest projects.</li>
@@ -488,9 +489,9 @@ const AboutPage: React.FC = () => {
           <h2 className="mb-4 text-2xl font-semibold">Need Help?</h2>
           <p className="text-zinc-300">
             If you encounter any issues, experience difficulties, or have any
-            questions regarding this platform or its functionality, please don't
-            hesitate to reach out. You can contact the developer directly via
-            Twitter at{" "}
+            questions regarding this platform or its functionality, please
+            don&#39;t hesitate to reach out. You can contact the developer
+            directly via Twitter at{" "}
             <a
               href="https://x.com/snvshal"
               className="text-blue-500 hover:underline"
