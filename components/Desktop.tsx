@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { AnimatedBackground } from "@/components/Animations"
 
 export type DesktopProps = {
   children: React.ReactNode
@@ -8,8 +9,9 @@ export type DesktopProps = {
 
 const Desktop: React.FC<DesktopProps> = ({ children }) => {
   return (
-    <div className="h-screen w-screen bg-zinc-950 text-zinc-200 overflow-hidden relative">
-      {children}
+    <div className="relative h-screen w-screen overflow-hidden">
+      <AnimatedBackground />
+      <div className="relative z-10 h-full w-full">{children}</div>
     </div>
   )
 }

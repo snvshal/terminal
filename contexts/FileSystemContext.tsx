@@ -24,8 +24,8 @@ export type FileSystemContextType = {
   getFullPath: (filename: string) => string
   currentUser: string | null
   setCurrentUser: (username: string | null) => void
-  searching: string | null
-  setSearching: React.Dispatch<React.SetStateAction<string | null>>
+  loading: string | null
+  setLoading: React.Dispatch<React.SetStateAction<string | null>>
   openNotepad: boolean
   setOpenNotepad: React.Dispatch<React.SetStateAction<boolean>>
   editFile: { filename: string; content: string } | null
@@ -52,7 +52,7 @@ export const FileSystemProvider: React.FC<{
 }> = ({ children, username }) => {
   const [currentDirectory, setCurrentDirectory] = useState("/")
   const [currentUser, setCurrentUser] = useState<string | null>(null)
-  const [searching, setSearching] = useState<string | null>(null)
+  const [loading, setLoading] = useState<string | null>(null)
   const [openNotepad, setOpenNotepad] = useState<boolean>(false)
   const [editFile, setEditFile] = useState<{
     filename: string
@@ -317,7 +317,7 @@ export const FileSystemProvider: React.FC<{
   }
 
   const openFile = async (filename: string): Promise<string> => {
-    if (!currentUser) return "Signin to edit file"
+    if (!currentUser) return "Signin to open file"
     if (!filename) return "Error: No file specified"
     // if (openNotepad) return "Error: Notepad is already opened"
     const { success, message, type } = await openFileAction(
@@ -361,9 +361,9 @@ export const FileSystemProvider: React.FC<{
         "Sign out to create a new account",
       ]
     } else {
-      setSearching("Creating your account")
+      setLoading("Creating your account")
       const { success, message } = await signUpAction(username, password)
-      setSearching(null)
+      setLoading(null)
       if (success) {
         setCurrentUser(username)
         setCurrentDirectory(`/${username}`)
@@ -387,9 +387,9 @@ export const FileSystemProvider: React.FC<{
         "Sign out to sign in with a different account",
       ]
     } else {
-      setSearching("Authenticating")
+      setLoading("Authenticating")
       const { success, message } = await signInAction(username, password)
-      setSearching(null)
+      setLoading(null)
 
       if (success) {
         // const username = content
@@ -442,8 +442,8 @@ export const FileSystemProvider: React.FC<{
         getFullPath,
         currentUser,
         setCurrentUser,
-        searching,
-        setSearching,
+        loading,
+        setLoading,
         openNotepad,
         setOpenNotepad,
         setEditFile,

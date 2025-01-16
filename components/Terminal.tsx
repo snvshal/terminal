@@ -6,6 +6,7 @@ import { usePortfolio } from "@/contexts/PortfolioContext"
 import { cn } from "@/lib/utils"
 import Window from "./Window"
 import { useRouter } from "next/navigation"
+import { AnimatedLoading } from "./Animations"
 
 export type TerminalProps = {
   initialPosition: { x: number; y: number }
@@ -24,7 +25,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
   const inputRef = useRef<HTMLInputElement>(null)
   const outputRef = useRef<HTMLDivElement>(null)
-  const { currentDirectory, executeCommand, currentUser, searching } =
+  const { currentDirectory, executeCommand, currentUser, loading } =
     useFileSystem()
   const { executePortfolioCommand, inputMode, handleInputStep } = usePortfolio()
 
@@ -191,12 +192,12 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
           </div>
         ))}
 
-        {!searching ? (
+        {!loading ? (
           !isExecuting && (
             <div className="flex items-center whitespace-pre">
               {inputMode ? (
                 <>
-                  <span>Input: </span>
+                  <span>{inputMode.steps[inputMode.currentStep].prompt} </span>
                   <form onSubmit={handleInputModeSubmit} className="flex-grow">
                     <input
                       ref={inputRef}
@@ -232,29 +233,10 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
             </div>
           )
         ) : (
-          <SearchingAnimation text={searching} />
+          <AnimatedLoading text={loading} />
         )}
       </div>
     </Window>
-  )
-}
-
-const SearchingAnimation = ({ text }: { text: string }) => {
-  const [dots, setDots] = useState(".")
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDots((prevDots) => (prevDots.length < 3 ? prevDots + "." : "."))
-    }, 400)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  return (
-    <span>
-      {text}
-      {dots}
-    </span>
   )
 }
 
