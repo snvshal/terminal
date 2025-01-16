@@ -63,7 +63,9 @@ export const PortfolioProvider: React.FC<{
 }> = ({ children }) => {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
   const [inputMode, setInputMode] = useState<InputMode | null>(null)
-  const { currentUser, setCurrentDirectory, setSearching } = useFileSystem()
+  const { currentUser, setCurrentDirectory, setLoading } = useFileSystem()
+
+  const baseURL = window.location.origin
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -82,21 +84,19 @@ export const PortfolioProvider: React.FC<{
   const executePortfolioCommand = async (
     command: string,
   ): Promise<string[]> => {
-    const [cmd, ...args] = command
-      .toLowerCase()
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
+    const [cmd, ...args] = command.trim().split(/\s+/).filter(Boolean)
+    const fcmd = cmd.toLowerCase()
+    const field = args.length > 0 ? args[0].toLowerCase() : ""
 
-    switch (cmd) {
+    switch (fcmd) {
       case "view":
-        return viewPortfolio(args[0])
+        return viewPortfolio(field)
       case "edit":
-        return editPortfolio(args[0], args.slice(1).join(" "))
+        return editPortfolio(field, args.slice(1).join(" "))
       case "add":
-        return startAddItem(args[0])
+        return startAddItem(field)
       case "remove":
-        return removeItem(args[0], args.slice(1).join(" "))
+        return removeItem(field, args.slice(1).join(" "))
       case "save":
         return savePortfolio()
       case "clear":
@@ -213,7 +213,7 @@ export const PortfolioProvider: React.FC<{
       data: {},
     })
 
-    return [steps[0].prompt]
+    return []
   }
 
   const handleInputStep = async (input: string): Promise<string[]> => {
@@ -231,22 +231,38 @@ export const PortfolioProvider: React.FC<{
           currentStep: currentStep + 1,
           data,
         })
-        return [steps[currentStep + 1].prompt]
+        return [
+          `${steps[currentStep].prompt} ${input}`,
+          // steps[currentStep + 1].prompt,
+        ]
       } else {
         // All steps completed, validate and add the item
         const validationResult = validateItem(type, data)
         if (validationResult.success) {
           const result = await addItem(type, validationResult.data)
           setInputMode(null)
-          return result
+          return [
+            `${steps[steps.length - 1].prompt} ${input}`,
+            ...result,
+            "Enter command 'save' to save changes",
+          ]
         } else {
           setInputMode(null)
-          return [`Error: Invalid inputs. ${validationResult.error.message}`]
+          return [
+            `${steps[steps.length - 1].prompt} ${input}`,
+            `Error: Invalid inputs. ${formatZodError(validationResult.error)}`,
+          ]
         }
       }
     } else {
       return ["Error: This field is required. Please enter a value."]
     }
+  }
+
+  const formatZodError = (error: any): string => {
+    return error.issues
+      .map((issue: any) => `${issue.path.join(".")}: ${issue.message}`)
+      .join(", ")
   }
 
   const validateItem = (
@@ -322,20 +338,20 @@ export const PortfolioProvider: React.FC<{
           ...portfolio,
           skills: [...portfolio.skills, data as Skill],
         })
-        return [`Skill "${(data as Skill).name}" submitted successfully`]
+        return [`Skill "${(data as Skill).name}" added successfully`]
       case "project":
         setPortfolio({
           ...portfolio,
           projects: [...portfolio.projects, data as Project],
         })
-        return [`Project "${(data as Project).title}" submitted successfully`]
+        return [`Project "${(data as Project).title}" added successfully`]
       case "experience":
         setPortfolio({
           ...portfolio,
           experiences: [...portfolio.experiences, data as Experience],
         })
         return [
-          `Experience "${(data as Experience).role} at ${(data as Experience).company}" submitted successfully`,
+          `Experience "${(data as Experience).role} at ${(data as Experience).company}" added successfully`,
         ]
       case "social":
         setPortfolio({
@@ -343,21 +359,21 @@ export const PortfolioProvider: React.FC<{
           socialLinks: [...portfolio.socialLinks, data as SocialLink],
         })
         return [
-          `Social link for ${(data as SocialLink).platform} submitted successfully`,
+          `Social link for ${(data as SocialLink).platform} added successfully`,
         ]
       case "hobby":
         setPortfolio({
           ...portfolio,
           hobbies: [...portfolio.hobbies, data as Hobby],
         })
-        return [`Hobby "${(data as Hobby).name}" submitted successfully`]
+        return [`Hobby "${(data as Hobby).name}" added successfully`]
       case "education":
         setPortfolio({
           ...portfolio,
           education: [...portfolio.education, data as Education],
         })
         return [
-          `Education at "${(data as Education).institution}" submitted successfully`,
+          `Education at "${(data as Education).institution}" added successfully`,
         ]
     }
   }
@@ -374,11 +390,13 @@ export const PortfolioProvider: React.FC<{
       return [
         "Portfolio Overview:",
         "                                                   ",
-        `- Name:             ${portfolio.name}`,
-        `- Title:            ${portfolio.title}`,
-        `- Bio:              ${portfolio.bio}`,
-        `- Email:            ${portfolio.email || "Not set"}`,
-        `- Avatar:           ${portfolio.avatar ? "fileurl://" + portfolio.avatar : "Not set"}`,
+        `Name             ${portfolio.name}`,
+        `Title            ${portfolio.title}`,
+        `Bio              ${portfolio.bio}`,
+        `Email            ${portfolio.email || "Not set"}`,
+        `Avatar           ${portfolio.avatar ? "fileurl://" + portfolio.avatar : "Not set"}`,
+        "                                                   ",
+        `View your portfolio here: fileurl://${baseURL}/${currentUser}`,
         "                                                   ",
         "Use 'view <section>' to see details:",
         "example: view [skills, projects, experiences, or social links]",
@@ -473,6 +491,14 @@ export const PortfolioProvider: React.FC<{
 
     switch (section) {
       case "skill":
+        const skillExists = portfolio.skills.some(
+          (skill) => skill.name === itemIdentifier,
+        )
+
+        if (!skillExists) {
+          return [`Error: Identifier not found in skills: ${itemIdentifier}`]
+        }
+
         setPortfolio({
           ...portfolio,
           skills: portfolio.skills.filter(
@@ -480,7 +506,16 @@ export const PortfolioProvider: React.FC<{
           ),
         })
         return [`Removed skill: ${itemIdentifier}`]
+
       case "project":
+        const projectExists = portfolio.projects.some(
+          (project) => project.title === itemIdentifier,
+        )
+
+        if (!projectExists) {
+          return [`Error: Identifier not found in projects: ${itemIdentifier}`]
+        }
+
         setPortfolio({
           ...portfolio,
           projects: portfolio.projects.filter(
@@ -488,7 +523,18 @@ export const PortfolioProvider: React.FC<{
           ),
         })
         return [`Removed project: ${itemIdentifier}`]
+
       case "experience":
+        const experienceExists = portfolio.experiences.some(
+          (exp) => exp.role === itemIdentifier,
+        )
+
+        if (!experienceExists) {
+          return [
+            `Error: Identifier not found in experiences: ${itemIdentifier}`,
+          ]
+        }
+
         setPortfolio({
           ...portfolio,
           experiences: portfolio.experiences.filter(
@@ -496,7 +542,18 @@ export const PortfolioProvider: React.FC<{
           ),
         })
         return [`Removed experience: ${itemIdentifier}`]
+
       case "social":
+        const socialExists = portfolio.socialLinks.some(
+          (link) => link.platform === itemIdentifier,
+        )
+
+        if (!socialExists) {
+          return [
+            `Error: Identifier not found in social links: ${itemIdentifier}`,
+          ]
+        }
+
         setPortfolio({
           ...portfolio,
           socialLinks: portfolio.socialLinks.filter(
@@ -504,7 +561,16 @@ export const PortfolioProvider: React.FC<{
           ),
         })
         return [`Removed social link: ${itemIdentifier}`]
+
       case "hobby":
+        const hobbyExists = portfolio.hobbies.some(
+          (hobby) => hobby.name === itemIdentifier,
+        )
+
+        if (!hobbyExists) {
+          return [`Error: Identifier not found in hobbies: ${itemIdentifier}`]
+        }
+
         setPortfolio({
           ...portfolio,
           hobbies: portfolio.hobbies.filter(
@@ -512,7 +578,16 @@ export const PortfolioProvider: React.FC<{
           ),
         })
         return [`Removed hobby: ${itemIdentifier}`]
+
       case "education":
+        const educationExists = portfolio.education.some(
+          (edu) => edu.institution === itemIdentifier,
+        )
+
+        if (!educationExists) {
+          return [`Error: Identifier not found in education: ${itemIdentifier}`]
+        }
+
         setPortfolio({
           ...portfolio,
           education: portfolio.education.filter(
@@ -520,6 +595,7 @@ export const PortfolioProvider: React.FC<{
           ),
         })
         return [`Removed education: ${itemIdentifier}`]
+
       default:
         return [`Error: Unknown section: ${section}`]
     }
@@ -544,10 +620,10 @@ export const PortfolioProvider: React.FC<{
   const savePortfolio = async (): Promise<string[]> => {
     if (!portfolio) return ["Error: No changes to save"]
     try {
-      setSearching("Saving portfolio")
+      setLoading("Saving portfolio")
       const preparedPortfolio = preparePortfolioForSave(portfolio)
       const { message } = await updatePortfolioAction(preparedPortfolio)
-      setSearching(null)
+      setLoading(null)
       return [message]
     } catch (error) {
       return [`Error saving portfolio: ${error}`]
@@ -555,19 +631,10 @@ export const PortfolioProvider: React.FC<{
   }
 
   const portfolioHelpCommand = (): string[] => {
-    const commands = [
-      [
-        "view [section]",
-        "View portfolio or specific section (skills, projects, experiences, social, hobbies, education)",
-      ],
-      [
-        "edit <field> <value>",
-        "Edit basic portfolio fields (name, title, bio, email, avatar)",
-      ],
-      [
-        "add <section> <data>",
-        "Add item to a section (skill, project, experience, social, hobby, education)",
-      ],
+    const commands: [string, string][] = [
+      ["view [section]", "View portfolio or specific section"],
+      ["edit <field> <value>", "Edit basic portfolio fields"],
+      ["add <section> <data>", "Add item to a section"],
       ["remove <section> <identifier>", "Remove item from a section"],
       ["save", "Save changes to the portfolio"],
       ["clear/cls", "Clear the terminal screen"],
@@ -581,6 +648,13 @@ export const PortfolioProvider: React.FC<{
     commands.forEach(([cmd, desc]) => {
       output.push(`${cmd.padEnd(35)}${desc}`)
     })
+
+    const outputFooter = [
+      "                           ",
+      `For more details, visit: fileurl://${baseURL}/about`,
+    ]
+
+    output.push(...outputFooter)
 
     return output
   }
