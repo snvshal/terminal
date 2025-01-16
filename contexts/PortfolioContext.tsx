@@ -65,7 +65,7 @@ export const PortfolioProvider: React.FC<{
   const [inputMode, setInputMode] = useState<InputMode | null>(null)
   const { currentUser, setCurrentDirectory, setLoading } = useFileSystem()
 
-  const baseURL = window.location.origin
+  const baseURL = typeof window !== "undefined" ? window.location.origin : ""
 
   useEffect(() => {
     const fetchPortfolio = async () => {
