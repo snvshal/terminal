@@ -226,7 +226,7 @@ export const calculateDirectorySize = async (
   }
 }
 
-export async function searchUser(username: string) {
+export async function searchUser(username: string): Promise<string[]> {
   try {
     if (!username) return ["Error: Please provide a username"]
 
@@ -728,7 +728,12 @@ async function findNodeByPath(
   return undefined
 }
 
-export const updatePortfolio = async (portfolioData: Portfolio) => {
+export const updatePortfolio = async (
+  portfolioData: Portfolio,
+): Promise<{
+  success: boolean
+  message: string
+}> => {
   try {
     const user = await getUser()
     if (!user) return { success: false, message: "Error: User not found" }

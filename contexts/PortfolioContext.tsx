@@ -480,7 +480,10 @@ export const PortfolioProvider: React.FC<{
       case "avatar":
         if (!value) return [`Error: The value for '${field}' is required`]
         setPortfolio({ ...portfolio, [field]: value })
-        return [`Updated ${field} to: ${value}`]
+        return [
+          `Updated ${field} to: ${value}`,
+          "Enter command 'save' to save changes",
+        ]
       default:
         return [`Error: Field '${field}' not found`]
     }
@@ -505,7 +508,10 @@ export const PortfolioProvider: React.FC<{
             (skill) => skill.name !== itemIdentifier,
           ),
         })
-        return [`Removed skill: ${itemIdentifier}`]
+        return [
+          `Removed skill: ${itemIdentifier}`,
+          "Enter command 'save' to save changes",
+        ]
 
       case "project":
         const projectExists = portfolio.projects.some(
@@ -522,7 +528,10 @@ export const PortfolioProvider: React.FC<{
             (project) => project.title !== itemIdentifier,
           ),
         })
-        return [`Removed project: ${itemIdentifier}`]
+        return [
+          `Removed project: ${itemIdentifier}`,
+          "Enter command 'save' to save changes",
+        ]
 
       case "experience":
         const experienceExists = portfolio.experiences.some(
@@ -541,7 +550,10 @@ export const PortfolioProvider: React.FC<{
             (exp) => exp.role !== itemIdentifier,
           ),
         })
-        return [`Removed experience: ${itemIdentifier}`]
+        return [
+          `Removed experience: ${itemIdentifier}`,
+          "Enter command 'save' to save changes",
+        ]
 
       case "social":
         const socialExists = portfolio.socialLinks.some(
@@ -560,7 +572,10 @@ export const PortfolioProvider: React.FC<{
             (link) => link.platform !== itemIdentifier,
           ),
         })
-        return [`Removed social link: ${itemIdentifier}`]
+        return [
+          `Removed social link: ${itemIdentifier}`,
+          "Enter command 'save' to save changes",
+        ]
 
       case "hobby":
         const hobbyExists = portfolio.hobbies.some(
@@ -577,7 +592,10 @@ export const PortfolioProvider: React.FC<{
             (hobby) => hobby.name !== itemIdentifier,
           ),
         })
-        return [`Removed hobby: ${itemIdentifier}`]
+        return [
+          `Removed hobby: ${itemIdentifier}`,
+          "Enter command 'save' to save changes",
+        ]
 
       case "education":
         const educationExists = portfolio.education.some(
@@ -594,7 +612,10 @@ export const PortfolioProvider: React.FC<{
             (edu) => edu.institution !== itemIdentifier,
           ),
         })
-        return [`Removed education: ${itemIdentifier}`]
+        return [
+          `Removed education: ${itemIdentifier}`,
+          "Enter command 'save' to save changes",
+        ]
 
       default:
         return [`Error: Unknown section: ${section}`]

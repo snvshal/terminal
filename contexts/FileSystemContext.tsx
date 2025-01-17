@@ -110,7 +110,7 @@ export const FileSystemProvider: React.FC<{
       case "userdel":
         return await deleteAccount(args[0], args[1])
       case "search":
-        return await searchUserAction(args[0])
+        return await searchUser(args[0])
       case "seturl":
         return [await setFileUrl(args[0], args[1])]
       case "portfolio":
@@ -344,6 +344,16 @@ export const FileSystemProvider: React.FC<{
     if (!url) return "Error: No URL specified"
 
     const result = await setFileUrlAction(currentDirectory, filename, url)
+
+    return result
+  }
+
+  const searchUser = async (username: string): Promise<string[]> => {
+    if (!username) return ["Error: No username specified"]
+
+    setLoading("Searching")
+    const result = await searchUserAction(username)
+    setLoading(null)
 
     return result
   }
