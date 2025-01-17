@@ -165,6 +165,18 @@ export const getUser = async (): Promise<UserProfile | null> => {
   }
 }
 
+export const getUsers = async (): Promise<UserProfile[]> => {
+  try {
+    await dbConnect()
+    const users: UserProfile[] = await User.find()
+
+    return users
+  } catch (error) {
+    console.error("Error in getUsers:", error)
+    return []
+  }
+}
+
 export const getUserByUsername = async (
   username: string,
 ): Promise<UserProfile | null> => {
