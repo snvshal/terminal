@@ -48,24 +48,25 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       setIsExecuting(true)
       setOutput((prev) => [
         ...prev,
-        `cmd://${currentUser ?? ""}@${currentDirectory} $ ${input}`,
+        `${currentUser ?? ""}@${currentDirectory} $ ${input}`,
       ])
       setCommandHistory([...commandHistory, input])
       setHistoryIndex(-1)
 
       try {
         let result: string[]
-        if (currentDirectory === "portfolio") {
+        const penv = currentDirectory === "portfolio"
+        if (penv) {
           result = await executePortfolioCommand(input)
         } else {
           result = await executeCommand(input)
         }
 
         for (const line of result) {
-          if (line === "clear") {
+          if (line === "cmd:clear") {
             setOutput([])
-          } else if (line === "about") {
-            router.push("/about")
+          } else if (line === "cmd:about") {
+            router.push(penv ? "/about#portfolio" : "/about")
           } else {
             await new Promise((resolve) => setTimeout(resolve, 10))
             setOutput((prev) => [...prev, line])
@@ -138,10 +139,6 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   }
 
   const renderLine = (line: string): React.JSX.Element => {
-    if (line.startsWith("cmd://")) {
-      return <span className="my-4">{line.replace("cmd://", "")}</span>
-    }
-
     if (line.includes("fileurl://")) {
       const parts = line.split(/(fileurl:\/\/\S+)/)
 

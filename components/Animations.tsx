@@ -1,17 +1,14 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import {
+  GlassyBlurSkeletonProps,
+  WindowSize,
+  Particle,
+  LoadingText,
+} from "@/types/props"
 
 const PARTICLE_COUNT = 50
-
-type Particle = {
-  x: number
-  y: number
-  size: number
-  speedX: number
-  speedY: number
-  opacity: number
-}
 
 const AnimatedBackground: React.FC = () => {
   const [particles, setParticles] = useState<Particle[]>([])
@@ -75,9 +72,7 @@ const AnimatedBackground: React.FC = () => {
   )
 }
 
-type Text = { text: string }
-
-const AnimatedLoading: React.FC<Text> = ({ text }) => {
+const AnimatedLoading: React.FC<LoadingText> = ({ text }) => {
   const [dots, setDots] = useState(".")
 
   useEffect(() => {
@@ -96,4 +91,57 @@ const AnimatedLoading: React.FC<Text> = ({ text }) => {
   )
 }
 
-export { AnimatedBackground, AnimatedLoading }
+const GlassyBlurSkeleton: React.FC<GlassyBlurSkeletonProps> = ({
+  position,
+  initialWindowSize,
+  opacity = 0.2,
+  blur = 16,
+  borderRadius = "1rem",
+}) => {
+  const [windowSize, setWindowSize] = useState<WindowSize>({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  })
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+    }
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
+  return (
+    <div
+      className={`fixed border border-white/25 shadow-2xl backdrop-blur-lg backdrop-filter transition-all duration-300 ease-in-out`}
+      style={{
+        ...(position.y > 0
+          ? {
+              top: position.y,
+              left: position.x,
+              width: initialWindowSize.width,
+              height: initialWindowSize.height,
+            }
+          : {
+              inset: 8,
+              width: windowSize.width - 16,
+              height: windowSize.height - 16,
+            }),
+        borderRadius,
+        backdropFilter: `blur(${blur}px) saturate(150%)`,
+        backgroundColor: `rgba(255, 255, 255, ${opacity})`,
+        // boxShadow: `
+        //   0 10px 30px rgba(0, 0, 0, 0.2),
+        //   inset 0 0 30px rgba(255, 255, 255, 0.2),
+        //   0 5px 10px rgba(0, 0, 0, 0.1)
+        // `,
+      }}
+    />
+  )
+}
+
+export { AnimatedBackground, AnimatedLoading, GlassyBlurSkeleton }

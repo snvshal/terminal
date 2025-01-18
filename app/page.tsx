@@ -97,7 +97,10 @@ function HomeContent() {
       ))}
       {!openWindows.length && (
         <div className="flex h-screen w-full items-center justify-center text-muted-foreground">
-          <button onDoubleClick={openTerminal} className="text-gray-500">
+          <button
+            onDoubleClick={openTerminal}
+            className="text-gray-500 selection:bg-gray-700"
+          >
             Double Click
           </button>
         </div>

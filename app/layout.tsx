@@ -6,7 +6,10 @@ import { FileSystemProvider } from "@/contexts/FileSystemContext"
 const geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "OS Terminal Simulation",
+  title: {
+    default: "SN Terminal",
+    template: "%s | SN Terminal",
+  },
   description:
     "A web-based terminal simulation that features a personalized file system and portfolio management, allowing users to interact with a simulated command-line interface.",
   applicationName: "SN Terminal",

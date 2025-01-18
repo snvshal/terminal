@@ -96,7 +96,7 @@ export const FileSystemProvider: React.FC<{
         return [await renameFileOrDirectory(args[0], args[1])]
       case "clear":
       case "cls":
-        return ["clear"]
+        return ["cmd:clear"]
       case "help":
         return helpCommand()
       // case "chmod":
@@ -116,7 +116,7 @@ export const FileSystemProvider: React.FC<{
       case "portfolio":
         return [userPortfolio()]
       case "about":
-        return ["about"]
+        return ["cmd:about"]
       default:
         return [`Error: Command not found: ${cmd}`]
     }
