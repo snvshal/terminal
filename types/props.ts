@@ -1,3 +1,5 @@
+export type LoadingText = { text: string }
+
 export type Position = {
   x: number
   y: number
@@ -6,6 +8,15 @@ export type Position = {
 export type WindowSize = {
   width: number
   height: number
+}
+
+export type Particle = {
+  x: number
+  y: number
+  size: number
+  speedX: number
+  speedY: number
+  opacity: number
 }
 
 export type GlassyBlurSkeletonProps = {

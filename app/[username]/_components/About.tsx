@@ -163,7 +163,7 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="mb-12">
+        <section id="portfolio" className="mb-12">
           <h2 className="mb-4 text-2xl font-semibold">
             Creating Your Portfolio
           </h2>

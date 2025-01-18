@@ -65,8 +65,6 @@ export const PortfolioProvider: React.FC<{
   const [inputMode, setInputMode] = useState<InputMode | null>(null)
   const { currentUser, setCurrentDirectory, setLoading } = useFileSystem()
 
-  const baseURL = typeof window !== "undefined" ? window.location.origin : ""
-
   useEffect(() => {
     const fetchPortfolio = async () => {
       if (!currentUser) return
@@ -101,11 +99,13 @@ export const PortfolioProvider: React.FC<{
         return savePortfolio()
       case "clear":
       case "cls":
-        return ["clear"]
+        return ["cmd:clear"]
       case "help":
         return portfolioHelpCommand()
       case "exit":
         return exitPortfolio()
+      case "about":
+        return ["cmd:about"]
       default:
         return [`Error: Unknown portfolio command: ${cmd}`]
     }
@@ -385,6 +385,7 @@ export const PortfolioProvider: React.FC<{
 
   const viewPortfolio = (section?: string): string[] => {
     if (!portfolio) return ["Error: Portfolio not loaded"]
+    const baseURL = window.location.origin
 
     if (!section) {
       return [
@@ -405,13 +406,20 @@ export const PortfolioProvider: React.FC<{
 
     switch (section) {
       case "skills":
+        if (!portfolio.skills.length) {
+          return ["Skills section is empty"]
+        }
         return [
           "Skills:",
           ...portfolio.skills.flatMap((skill) => [
             `- ${skill.name}:       ${skill.level ? `${skill.level}` : ""}`,
           ]),
         ]
+
       case "projects":
+        if (!portfolio.projects.length) {
+          return ["Projects section is empty"]
+        }
         return [
           "Projects:",
           ...portfolio.projects.flatMap((project, index) => [
@@ -424,7 +432,11 @@ export const PortfolioProvider: React.FC<{
             `                     `,
           ]),
         ]
+
       case "experiences":
+        if (!portfolio.experiences.length) {
+          return ["Experiences section is empty"]
+        }
         return [
           "Experiences:",
           ...portfolio.experiences.flatMap((exp) => [
@@ -434,23 +446,36 @@ export const PortfolioProvider: React.FC<{
             `- Description:      ${exp.description} `,
             `- Start Date:       ${exp.startDate}`,
             `- End Date:         ${exp.endDate || "Present"}`,
+            `                     `,
           ]),
         ]
+
       case "social":
+        if (!portfolio.socialLinks.length) {
+          return ["Social Links section is empty"]
+        }
         return [
           "Social Links:",
           ...portfolio.socialLinks.flatMap((link) => [
             `- ${link.platform}:      ${"fileurl://" + link.url}`,
           ]),
         ]
+
       case "hobbies":
+        if (!portfolio.hobbies.length) {
+          return ["Hobbies section is empty"]
+        }
         return [
           "Hobbies:",
           ...portfolio.hobbies.flatMap((hobby) => [
             `- ${hobby.name}:       ${hobby.description || ""}`,
           ]),
         ]
+
       case "education":
+        if (!portfolio.education.length) {
+          return ["Education section is empty"]
+        }
         return [
           "Education:",
           ...portfolio.education.flatMap((edu) => [
@@ -461,8 +486,10 @@ export const PortfolioProvider: React.FC<{
             `- Start Date:       ${edu.startDate}`,
             `- End Date:         ${edu.endDate || "Present"}`,
             `- Description:      ${edu.description || "Not provided"}`,
+            `                     `,
           ]),
         ]
+
       default:
         return [`Error: Unknown section: ${section}`]
     }
@@ -659,6 +686,7 @@ export const PortfolioProvider: React.FC<{
       ["remove <section> <identifier>", "Remove item from a section"],
       ["save", "Save changes to the portfolio"],
       ["clear/cls", "Clear the terminal screen"],
+      ["about", "For more details about portfolio"],
       ["help", "Display this help message"],
     ]
 
@@ -669,13 +697,6 @@ export const PortfolioProvider: React.FC<{
     commands.forEach(([cmd, desc]) => {
       output.push(`${cmd.padEnd(35)}${desc}`)
     })
-
-    const outputFooter = [
-      "                           ",
-      `For more details, visit: fileurl://${baseURL}/about`,
-    ]
-
-    output.push(...outputFooter)
 
     return output
   }

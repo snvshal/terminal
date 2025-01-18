@@ -5,6 +5,24 @@ import AboutPage from "./_components/About"
 import DownloadResumeButton from "./_components/DownloadResumeButton"
 import { Portfolio } from "@/types/schema"
 import { dateFormatter } from "./_utils/date-formatter"
+import type { Metadata } from "next"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>
+}): Promise<Metadata> {
+  const username = (await params).username
+  if (username === "about") return { title: "About" }
+
+  const user = await getUserByUsername(username)
+
+  if (!user) return { title: "Portfolio not found" }
+
+  return {
+    title: user?.portfolio.name,
+  }
+}
 
 export default async function UserPortfolio({
   params,
@@ -12,13 +30,10 @@ export default async function UserPortfolio({
   params: Promise<{ username: string }>
 }) {
   const { username } = await params
-
   if (username === "about") return <AboutPage />
 
   const user = await getUserByUsername(username)
-
   if (!user) notFound()
-
   const portfolio: Portfolio = user.portfolio
 
   return (
