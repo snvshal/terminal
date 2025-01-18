@@ -50,6 +50,8 @@ export default async function Image({
           justifyContent: "center",
         }}
       >
+        {/* Using <img> because <Image /> from next/image is not compatible with next/og's ImageResponse */}
+        {/* eslint-disable @next/next/no-img-element */}
         <img
           src={validAvatar}
           alt={`${name}'s portfolio avatar`}
