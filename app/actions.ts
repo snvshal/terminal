@@ -645,7 +645,7 @@ export const renameFileOrDirectory = async (
     user.data.urls = renameItem(user.data.urls) as UrlItem[]
 
     await user.save()
-    return "Item renamed successfully"
+    return `${oldName} renamed to ${newName} successfully`
   } catch (error) {
     console.error(`Error in renaming ${oldName}:`, error)
     return `Error: An error occurred while renaming ${oldName}`

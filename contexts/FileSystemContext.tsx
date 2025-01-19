@@ -131,7 +131,10 @@ export const FileSystemProvider: React.FC<{
   const listDirectory = async (): Promise<string[]> => {
     if (!currentUser) return ["Signin to list items"]
     if (currentDirectory) {
+      setLoading("Listing")
       const list = await listDirectoryAction(currentDirectory)
+      setLoading(null)
+
       return list
     }
 
@@ -178,7 +181,9 @@ export const FileSystemProvider: React.FC<{
 
       const newPath = `${currentDirectory}/${path}`.replace(/\/+/g, "/")
 
+      setLoading("Changing directory")
       const { success, message } = await changeDirectoryAction(newPath)
+      setLoading(null)
 
       if (!success) return message
       setCurrentDirectory(message)
@@ -188,28 +193,62 @@ export const FileSystemProvider: React.FC<{
     return "Error: Directory not found"
   }
 
-  const createDirectory = async (name: string): Promise<string> => {
+  const createDirectory = async (directoryName: string): Promise<string> => {
     if (!currentUser) return "Signin to create directory"
-    if (!name) return "Error: No directory name specified"
-    return createNodeAction(currentUser, currentDirectory, name, "directory")
+    if (!directoryName) return "Error: No directory name specified"
+
+    setLoading("Creating directory")
+    const result = createNodeAction(
+      currentUser,
+      currentDirectory,
+      directoryName,
+      "directory",
+    )
+    setLoading(null)
+
+    return result
   }
 
-  const createFile = async (name: string): Promise<string> => {
+  const createFile = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to create file"
-    if (!name) return "Error: No file name specified"
-    return createNodeAction(currentUser, currentDirectory, name, "file")
+    if (!filename) return "Error: No file name specified"
+
+    setLoading("Creating file")
+    const result = createNodeAction(
+      currentUser,
+      currentDirectory,
+      filename,
+      "file",
+    )
+    setLoading(null)
+
+    return result
   }
 
-  const removeDirectory = async (filename: string): Promise<string> => {
+  const removeDirectory = async (directoryName: string): Promise<string> => {
     if (!currentUser) return "Signin to remove directory"
-    if (!filename) return "Error: No directory specified"
-    return removeNodeAction(currentDirectory, filename, "directory")
+    if (!directoryName) return "Error: No directory specified"
+
+    setLoading("Removing directory")
+    const result = removeNodeAction(
+      currentDirectory,
+      directoryName,
+      "directory",
+    )
+    setLoading(null)
+
+    return result
   }
 
   const removeFile = async (filename: string): Promise<string> => {
     if (!currentUser) return "Signin to remove file"
     if (!filename) return "Error: No file specified"
-    return removeNodeAction(currentDirectory, filename, "file")
+
+    setLoading("Removing file")
+    const result = removeNodeAction(currentDirectory, filename, "file")
+    setLoading(null)
+
+    return result
   }
 
   const renameFileOrDirectory = async (
@@ -224,11 +263,13 @@ export const FileSystemProvider: React.FC<{
       return "Error: The new name must be different from the current name."
     }
 
+    setLoading(`Renaming ${oldName}`)
     const message = await renameFileOrDirectoryAction(
       currentDirectory,
       oldName,
       newName,
     )
+    setLoading(null)
 
     return message
   }
@@ -238,14 +279,14 @@ export const FileSystemProvider: React.FC<{
   }
 
   const moveFileOrDirectory = async (
-    name: string,
+    fileOrDirectoryName: string,
     destination: string,
   ): Promise<string> => {
     if (!currentUser) return "Signin to move file/directory"
-    if (!name || !destination)
+    if (!fileOrDirectoryName || !destination)
       return "Error: Source and destination must be specified"
 
-    if (name === destination) {
+    if (fileOrDirectoryName === destination) {
       return "Error: Destination path cannot be the source path"
     }
 
@@ -257,11 +298,14 @@ export const FileSystemProvider: React.FC<{
       return "Error: Cannot operate outside of user's directory"
     }
 
+    setLoading(`Moving ${fileOrDirectoryName}`)
     const message = await moveFileOrDirectoryAction(
       currentDirectory,
-      name,
+      fileOrDirectoryName,
       destinationPath,
     )
+    setLoading(null)
+
     return message
   }
 

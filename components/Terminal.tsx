@@ -16,7 +16,7 @@ export type TerminalProps = {
 const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   const [input, setInput] = useState("")
   const [output, setOutput] = useState<string[]>([
-    'Welcome to the OS Terminal. Type "help" for available commands.',
+    'Welcome to the SN Terminal. Type "help" for available commands.',
   ])
 
   const [commandHistory, setCommandHistory] = useState<string[]>([])
