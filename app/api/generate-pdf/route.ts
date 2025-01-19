@@ -1,9 +1,8 @@
-// app/api/generate-pdf/route.ts
+import React from "react"
 import { NextRequest, NextResponse } from "next/server"
 import { getUserByUsername } from "@/app/actions"
 import ReactPDF, { Document } from "@react-pdf/renderer"
 import ResumePDF from "@/components/ResumePDF"
-import React from "react"
 
 export async function GET(request: NextRequest) {
   try {

@@ -63,7 +63,8 @@ export const PortfolioProvider: React.FC<{
 }> = ({ children }) => {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
   const [inputMode, setInputMode] = useState<InputMode | null>(null)
-  const { currentUser, setCurrentDirectory, setLoading } = useFileSystem()
+  const { currentUser, currentDirectory, setCurrentDirectory, setLoading } =
+    useFileSystem()
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -379,8 +380,8 @@ export const PortfolioProvider: React.FC<{
   }
 
   const exitPortfolio = (): string[] => {
-    setCurrentDirectory(`/${currentUser}`)
-    return []
+    setCurrentDirectory(currentDirectory)
+    return ["You have exited the portfolio environment"]
   }
 
   const viewPortfolio = (section?: string): string[] => {

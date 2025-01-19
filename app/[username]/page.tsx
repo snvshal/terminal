@@ -19,8 +19,11 @@ export async function generateMetadata({
 
   if (!user) return { title: "Portfolio not found" }
 
+  const { name, bio } = user.portfolio
+
   return {
-    title: user?.portfolio.name,
+    title: name,
+    description: bio,
   }
 }
 
