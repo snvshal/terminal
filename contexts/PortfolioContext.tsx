@@ -401,7 +401,7 @@ export const PortfolioProvider: React.FC<{
         `View your portfolio here: fileurl://${baseURL}/${currentUser}`,
         "                                                   ",
         "Use 'view <section>' to see details:",
-        "example: view [skills, projects, experiences, or social links]",
+        "example: view [skills, projects, experiences, education, hobbies or social links]",
       ]
     }
 
