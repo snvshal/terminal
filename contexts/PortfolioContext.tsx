@@ -686,6 +686,7 @@ export const PortfolioProvider: React.FC<{
       ["add <section> <data>", "Add item to a section"],
       ["remove <section> <identifier>", "Remove item from a section"],
       ["save", "Save changes to the portfolio"],
+      ["exit", "Exit the portfolio environment"],
       ["clear/cls", "Clear the terminal screen"],
       ["about", "For more details about portfolio"],
       ["help", "Display this help message"],
