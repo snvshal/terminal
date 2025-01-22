@@ -380,7 +380,7 @@ export const PortfolioProvider: React.FC<{
   }
 
   const exitPortfolio = (): string[] => {
-    setCurrentDirectory(currentDirectory)
+    setCurrentDirectory(`/${currentUser}`)
     return ["You have exited the portfolio environment"]
   }
 
