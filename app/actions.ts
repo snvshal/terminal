@@ -401,7 +401,7 @@ export const openFile = async (
     if (!user)
       return {
         success: false,
-        message: "Error: User not found",
+        message: "User not found",
         type: "not-found",
       }
 
@@ -410,7 +410,7 @@ export const openFile = async (
     if (!node)
       return {
         success: false,
-        message: "Error: File not found",
+        message: "File not found",
         type: "not-found",
       }
 
@@ -430,14 +430,14 @@ export const openFile = async (
 
     return {
       success: false,
-      message: "Error: File not found",
+      message: "File not found",
       type: "not-found",
     }
   } catch (error) {
     console.error("Error in editFileContent:", error)
     return {
       success: false,
-      message: "Error: An error occurred while preparing to edit file content",
+      message: "An error occurred while preparing to edit file content",
       type: "not-found",
     }
   }
