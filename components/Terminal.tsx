@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import Window from "./Window"
 import { useRouter } from "next/navigation"
 import { AnimatedLoading } from "./Animations"
+import ProfileCard from "./ProfileCard"
 
 export type TerminalProps = {
   initialPosition: { x: number; y: number }
@@ -139,6 +140,11 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   }
 
   const renderLine = (line: string): React.JSX.Element => {
+    if (line.startsWith("profile://")) {
+      const profileData = JSON.parse(line.replace("profile://", ""))
+      return <ProfileCard {...profileData} />
+    }
+
     if (line.includes("fileurl://")) {
       const parts = line.split(/(fileurl:\/\/\S+)/)
 
@@ -174,14 +180,14 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       initialPosition={initialPosition}
     >
       <div
-        className="window-scrollbar h-full w-full overflow-y-auto p-4 font-mono text-sm text-zinc-100"
+        className="window-scrollbar h-full w-full overflow-y-auto p-4 text-sm text-zinc-100"
         ref={outputRef}
       >
         {output.map((line, index) => (
           <div
             key={index}
             className={cn(
-              "whitespace-pre",
+              "whitespace-pre leading-6",
               line.startsWith("Error:") && "text-red-500",
             )}
           >
@@ -191,7 +197,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
         {!loading ? (
           !isExecuting && (
-            <div className="flex items-center whitespace-pre">
+            <div className="flex items-center whitespace-pre leading-6">
               {inputMode ? (
                 <>
                   <span>{inputMode.steps[inputMode.currentStep].prompt} </span>
