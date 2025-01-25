@@ -5,7 +5,7 @@ import useFullScreen from "@/hooks/useFullScreen"
 import { WindowProps, WindowHeaderProps } from "@/types/props"
 import { GlassyBlurSkeleton } from "./Animations"
 
-export const initialWindowSize = { width: 600, height: 400 }
+export const initialWindowSize = { width: 700, height: 400 }
 
 const WindowHeader: React.FC<WindowHeaderProps> = ({
   title,

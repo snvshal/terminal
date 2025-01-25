@@ -278,7 +278,7 @@ const ResumePDF: React.FC<ResumePDFProps> = ({ portfolio }) => (
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Professional Experience</Text>
+        <Text style={styles.sectionTitle}>Experience</Text>
         {portfolio.experiences.map((exp, index) => (
           <View key={index} style={styles.experienceBlock}>
             <Text style={styles.roleTitle}>{exp.role}</Text>
@@ -295,7 +295,7 @@ const ResumePDF: React.FC<ResumePDFProps> = ({ portfolio }) => (
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notable Projects</Text>
+        <Text style={styles.sectionTitle}>Projects</Text>
         {portfolio.projects.map((project, index) => (
           <View key={index} style={styles.projectBlock}>
             <View style={styles.projectHeader}>

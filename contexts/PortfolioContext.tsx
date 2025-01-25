@@ -389,19 +389,18 @@ export const PortfolioProvider: React.FC<{
     const baseURL = window.location.origin
 
     if (!section) {
+      const profileData = {
+        name: portfolio.name,
+        title: portfolio.title,
+        bio: portfolio.bio,
+        email: portfolio.email || "Not set",
+        avatar: portfolio.avatar || "/placeholder-avatar.svg",
+        portfolioUrl: `${baseURL}/${currentUser}`,
+      }
+
       return [
-        "Portfolio Overview:",
-        "                                                   ",
-        `Name             ${portfolio.name}`,
-        `Title            ${portfolio.title}`,
-        `Bio              ${portfolio.bio}`,
-        `Email            ${portfolio.email || "Not set"}`,
-        `Avatar           ${portfolio.avatar ? "fileurl://" + portfolio.avatar : "Not set"}`,
-        "                                                   ",
-        `View your portfolio here: fileurl://${baseURL}/${currentUser}`,
-        "                                                   ",
-        "Use 'view <section>' to see details:",
-        "example: view [skills, projects, experiences, education, hobbies or social links]",
+        `profile://${JSON.stringify(profileData)}`,
+        "Use 'view <section>' to see details. Example: 'view projects'",
       ]
     }
 

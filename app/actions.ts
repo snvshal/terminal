@@ -246,17 +246,17 @@ export async function searchUser(username: string): Promise<string[]> {
     if (!user) return [`User not found: '${username}'`]
 
     const portfolio = user.portfolio
-    return [
-      `Portfolio Overview of ${username}:`,
-      "                                                   ",
-      `Name         ${portfolio.name}`,
-      `Title        ${portfolio.title}`,
-      `Bio          ${portfolio.bio}`,
-      `Email        ${portfolio.email || "Not set"}`,
-      `Avatar       ${portfolio.avatar || "Not set"}`,
-      "                                                   ",
-      `View ${portfolio.name}'s portfolio here: fileurl://${process.env.METADATA_BASE_URL}/${username}`,
-    ]
+
+    const profileData = {
+      name: portfolio.name,
+      title: portfolio.title,
+      bio: portfolio.bio,
+      email: portfolio.email || "Not set",
+      avatar: portfolio.avatar || "/placeholder-avatar.svg",
+      portfolioUrl: `${process.env.METADATA_BASE_URL}/${username}`,
+    }
+
+    return [`profile://${JSON.stringify(profileData)}`]
   } catch (error) {
     console.error("Error searching for user:", error)
     return ["An error occurred while searching for the user"]
