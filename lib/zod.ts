@@ -88,6 +88,7 @@ export const UserProfileSchema = z.object({
   username: z
     .string()
     .min(2, { message: "Username must be at least 2 characters long." })
+    .max(20, { message: "Username must be less than 20 characters long." })
     .regex(/^[a-zA-Z0-9]+$/, {
       message: "Username must only contain letters and numbers.",
     }),
