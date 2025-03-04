@@ -321,16 +321,16 @@ const AboutPage: React.FC = () => {
             </div>
 
             <div>
-              <h3 className="mb-2 text-xl font-semibold">Experiences</h3>
+              <h3 className="mb-2 text-xl font-semibold">Experience</h3>
               <p className="mb-2 text-zinc-300">
-                Your work experiences, including role, company, start and end
+                Your work experience, including role, company, start and end
                 dates, and description.
               </p>
               <ul className="list-inside list-disc space-y-1 text-zinc-300">
                 <li>
                   View:{" "}
                   <code className="rounded bg-zinc-800 px-2 py-1">
-                    view experiences
+                    view experience
                   </code>
                 </li>
                 <li>
@@ -357,7 +357,7 @@ const AboutPage: React.FC = () => {
                 <li>
                   View:{" "}
                   <code className="rounded bg-zinc-800 px-2 py-1">
-                    view social
+                    view socials
                   </code>
                 </li>
                 <li>

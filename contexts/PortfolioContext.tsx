@@ -23,6 +23,7 @@ import {
   HobbySchema,
   EducationSchema,
 } from "@/lib/zod"
+import { dateFormatter } from "@/lib/utils"
 
 type InputStep = {
   field: string
@@ -119,6 +120,15 @@ export const PortfolioProvider: React.FC<{
 
     let steps: InputStep[] = []
     switch (section) {
+      case "example":
+        return [
+          ">_ add skill",
+          ">_ add project",
+          ">_ add experience",
+          ">_ add social",
+          ">_ add hobby",
+          ">_ add education",
+        ]
       case "skill":
         steps = [
           { field: "name", prompt: "Enter skill name:" },
@@ -405,6 +415,15 @@ export const PortfolioProvider: React.FC<{
     }
 
     switch (section) {
+      case "example":
+        return [
+          ">_ view skills",
+          ">_ view projects",
+          ">_ view experience",
+          ">_ view socials",
+          ">_ view hobbies",
+          ">_ view education",
+        ]
       case "skills":
         if (!portfolio.skills.length) {
           return ["Skills section is empty"]
@@ -433,24 +452,24 @@ export const PortfolioProvider: React.FC<{
           ]),
         ]
 
-      case "experiences":
+      case "experience":
         if (!portfolio.experiences.length) {
-          return ["Experiences section is empty"]
+          return ["Experience section is empty"]
         }
         return [
-          "Experiences:",
+          "Experience:",
           ...portfolio.experiences.flatMap((exp) => [
             `${exp.role} at ${exp.company}:`,
             `- Role:             ${exp.role}`,
             `- Company:          ${exp.company}`,
             `- Description:      ${exp.description} `,
-            `- Start Date:       ${exp.startDate}`,
-            `- End Date:         ${exp.endDate || "Present"}`,
+            `- Start Date:       ${dateFormatter(exp.startDate)}`,
+            `- End Date:         ${exp.endDate ? dateFormatter(exp.endDate) : "Present"}`,
             `                     `,
           ]),
         ]
 
-      case "social":
+      case "socials":
         if (!portfolio.socialLinks.length) {
           return ["Social Links section is empty"]
         }
@@ -483,8 +502,8 @@ export const PortfolioProvider: React.FC<{
             `- Institution:      ${edu.institution}`,
             `- Degree:           ${edu.degree}`,
             `- Field of Study:   ${edu.fieldOfStudy}`,
-            `- Start Date:       ${edu.startDate}`,
-            `- End Date:         ${edu.endDate || "Present"}`,
+            `- Start Date:       ${dateFormatter(edu.startDate)}`,
+            `- End Date:         ${edu.endDate ? dateFormatter(edu.endDate) : "Present"}`,
             `- Description:      ${edu.description || "Not provided"}`,
             `                     `,
           ]),
@@ -500,6 +519,14 @@ export const PortfolioProvider: React.FC<{
     if (!field) return [`Error: Field is required`]
 
     switch (field) {
+      case "example":
+        return [
+          ">_ edit name John Doe",
+          ">_ edit title Web Developer",
+          ">_ edit bio I am a web developer building responsive, user-friendly websites and applications.",
+          ">_ edit avatar https://github.com/snvshal.png  // Any publicly available image link",
+          ">_ edit email example@gmail.com",
+        ]
       case "name":
       case "title":
       case "bio":
@@ -567,7 +594,7 @@ export const PortfolioProvider: React.FC<{
 
         if (!experienceExists) {
           return [
-            `Error: Identifier not found in experiences: ${itemIdentifier}`,
+            `Error: Identifier not found in experience: ${itemIdentifier}`,
           ]
         }
 
@@ -680,9 +707,13 @@ export const PortfolioProvider: React.FC<{
 
   const portfolioHelpCommand = (): string[] => {
     const commands: [string, string][] = [
-      ["view [section]", "View portfolio or specific section"],
+      ["view", "View portfolio"],
+      ["view <section>", "View specific section of portfolio"],
+      ["view example", "List available sections to view"],
       ["edit <field> <value>", "Edit basic portfolio fields"],
-      ["add <section> <data>", "Add item to a section"],
+      ["edit example", "List available fields to edit with example"],
+      ["add <section>", "Add item to a section"],
+      ["add example", "List available sections to add"],
       ["remove <section> <identifier>", "Remove item from a section"],
       ["save", "Save changes to the portfolio"],
       ["exit", "Exit the portfolio environment"],
