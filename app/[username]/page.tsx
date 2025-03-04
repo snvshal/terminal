@@ -43,7 +43,7 @@ export default async function UserPortfolio({
     try {
       new URL(url)
       return true
-    } catch (err) {
+    } catch {
       return false
     }
   }
