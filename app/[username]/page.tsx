@@ -4,7 +4,7 @@ import Image from "next/image"
 import AboutPage from "./_components/About"
 import DownloadResumeButton from "./_components/DownloadResumeButton"
 import { Portfolio } from "@/types/schema"
-import { dateFormatter } from "./_utils/date-formatter"
+import { dateFormatter } from "@/lib/utils"
 import type { Metadata } from "next"
 
 export async function generateMetadata({
@@ -39,9 +39,18 @@ export default async function UserPortfolio({
   if (!user) notFound()
   const portfolio: Portfolio = user.portfolio
 
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url)
+      return true
+    } catch (err) {
+      return false
+    }
+  }
+
   return (
     <div className="w-full bg-zinc-950 text-zinc-100">
-      <div className="mx-auto min-h-screen max-w-4xl selection:bg-purple-500/30">
+      <div className="mx-auto min-h-screen max-w-5xl selection:bg-purple-500/30">
         <div className="fixed inset-0 z-0">
           <div className="absolute left-10 top-20 h-72 w-72 rounded-full bg-purple-500/5 blur-3xl" />
           <div className="absolute bottom-20 right-10 h-72 w-72 rounded-full bg-blue-500/5 blur-3xl" />
@@ -55,10 +64,10 @@ export default async function UserPortfolio({
               <div className="flex-1 space-y-8 text-center lg:text-left">
                 <div className="space-y-4">
                   <p className="tracking-wider text-zinc-500">Hi, my name is</p>
-                  <h1 className="text-4xl font-bold sm:text-5xl lg:text-6xl">
+                  <h1 className="text-4xl font-bold lg:text-5xl">
                     {portfolio.name}
                   </h1>
-                  <p className="text-2xl text-zinc-400 sm:text-3xl lg:text-4xl">
+                  <p className="text-2xl text-zinc-400 lg:text-3xl">
                     {portfolio.title}
                   </p>
                 </div>
@@ -66,14 +75,14 @@ export default async function UserPortfolio({
                   {portfolio.bio}
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 pt-4 lg:justify-start">
-                  {portfolio.email && (
+                  {/* {portfolio.email && (
                     <a
                       href={`mailto:${portfolio.email}`}
                       className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-3 transition-colors hover:border-purple-500/50"
                     >
                       Get in touch
                     </a>
-                  )}
+                  )} */}
                   {/* {portfolio.socialLinks &&
                     portfolio.socialLinks.length > 0 &&
                     portfolio.socialLinks.map((link, index) => (
@@ -96,11 +105,15 @@ export default async function UserPortfolio({
                 <div className="relative mx-auto aspect-square max-w-xs sm:max-w-sm lg:max-w-md">
                   <div className="absolute inset-0 -rotate-6 rounded-3xl bg-gradient-to-tr from-purple-500/10 to-blue-500/10" />
                   <Image
-                    src={portfolio.avatar || "/placeholder.svg"}
+                    src={
+                      portfolio.avatar && isValidUrl(portfolio.avatar as string)
+                        ? portfolio.avatar
+                        : "/placeholder-avatar.svg"
+                    }
                     alt={portfolio.name}
                     width={400}
                     height={400}
-                    className="relative z-10 size-60 rounded-2xl object-cover sm:size-80"
+                    className="relative z-10 size-52 rounded-2xl object-cover sm:size-64 lg:size-80"
                     priority
                   />
                 </div>
@@ -113,8 +126,7 @@ export default async function UserPortfolio({
             <section className="py-20" id="projects">
               <h2 className="mb-12 flex items-center text-2xl font-semibold">
                 <a href="#projects">
-                  <span className="mr-2 text-purple-500">#</span> Featured
-                  Projects
+                  <span className="mr-2 text-purple-500">#</span> Projects
                 </a>
               </h2>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -123,16 +135,18 @@ export default async function UserPortfolio({
                     key={index}
                     className="group rounded-lg border border-zinc-800/50 bg-zinc-900/50 p-6 transition-colors hover:border-purple-500/50"
                   >
-                    {project.image && (
-                      <div className="relative mb-4 aspect-video overflow-hidden rounded-lg">
-                        <Image
-                          src={project.image || "/placeholder.svg"}
-                          alt={project.title}
-                          fill
-                          className="object-cover transition-transform group-hover:scale-105"
-                        />
-                      </div>
-                    )}
+                    <div className="relative mb-4 aspect-video overflow-hidden rounded-lg">
+                      <Image
+                        src={
+                          project.image && isValidUrl(project.image as string)
+                            ? project.image
+                            : "/placeholder-project.png"
+                        }
+                        alt={project.title}
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                      />
+                    </div>
                     <h3 className="mb-2 text-xl font-medium">
                       {project.title}
                     </h3>
@@ -288,8 +302,8 @@ export default async function UserPortfolio({
           {portfolio.socialLinks && portfolio.socialLinks.length > 0 && (
             <footer className="py-20" id="contact">
               <h2 className="mb-12 flex items-center text-2xl font-semibold">
-                <a href="#contact">
-                  <span className="mr-2 text-purple-500">#</span> Contact
+                <a href="#contacts">
+                  <span className="mr-2 text-purple-500">#</span> Contacts
                 </a>
               </h2>
               <div className="flex flex-wrap gap-4">

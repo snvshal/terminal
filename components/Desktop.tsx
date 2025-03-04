@@ -9,7 +9,7 @@ export type DesktopProps = {
 
 const Desktop: React.FC<DesktopProps> = ({ children }) => {
   return (
-    <div className="relative h-screen w-screen overflow-hidden">
+    <div className="relative h-dvh w-screen overflow-hidden">
       <AnimatedBackground />
       <div className="relative z-10 h-full w-full">{children}</div>
     </div>
