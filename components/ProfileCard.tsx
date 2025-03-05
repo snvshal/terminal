@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Mail, Globe } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, isValidImageUrl } from "@/lib/utils"
 
 export type ProfileCardProps = {
   name: string
@@ -27,7 +27,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="w-48 border border-zinc-700 bg-zinc-800">
             <div className="relative aspect-square">
               <Image
-                src={avatar || "/placeholder-avatar.svg"}
+                src={
+                  avatar && isValidImageUrl(avatar as string)
+                    ? avatar
+                    : "/placeholder-avatar.svg"
+                }
                 alt={`${name}'s avatar`}
                 sizes="160px"
                 fill

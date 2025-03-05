@@ -14,3 +14,15 @@ export const dateFormatter = (date: Date) => {
 
   return formattedDate
 }
+
+export const isValidImageUrl = (url: string): boolean => {
+  try {
+    const parsedUrl = new URL(url)
+
+    const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i
+
+    return imageExtensions.test(parsedUrl.pathname)
+  } catch {
+    return false
+  }
+}
