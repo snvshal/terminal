@@ -4,7 +4,7 @@ import Image from "next/image"
 import AboutPage from "./_components/About"
 import DownloadResumeButton from "./_components/DownloadResumeButton"
 import { Portfolio } from "@/types/schema"
-import { dateFormatter } from "@/lib/utils"
+import { dateFormatter, isValidImageUrl } from "@/lib/utils"
 import type { Metadata } from "next"
 
 export async function generateMetadata({
@@ -39,15 +39,6 @@ export default async function UserPortfolio({
   if (!user) notFound()
   const portfolio: Portfolio = user.portfolio
 
-  const isValidUrl = (url: string) => {
-    try {
-      new URL(url)
-      return true
-    } catch {
-      return false
-    }
-  }
-
   return (
     <div className="w-full bg-zinc-950 text-zinc-100">
       <div className="mx-auto min-h-screen max-w-5xl selection:bg-purple-500/30">
@@ -75,49 +66,27 @@ export default async function UserPortfolio({
                   {portfolio.bio}
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 pt-4 lg:justify-start">
-                  {/* {portfolio.email && (
-                    <a
-                      href={`mailto:${portfolio.email}`}
-                      className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-3 transition-colors hover:border-purple-500/50"
-                    >
-                      Get in touch
-                    </a>
-                  )} */}
-                  {/* {portfolio.socialLinks &&
-                    portfolio.socialLinks.length > 0 &&
-                    portfolio.socialLinks.map((link, index) => (
-                      <a
-                        key={index}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-3 transition-colors hover:border-purple-500/50"
-                      >
-                        {link.platform}
-                      </a>
-                    ))} */}
                   <DownloadResumeButton username={username} />
                 </div>
               </div>
 
               {/* Right Section (Image) */}
-              {portfolio.avatar && (
-                <div className="relative mx-auto aspect-square max-w-xs sm:max-w-sm lg:max-w-md">
-                  <div className="absolute inset-0 -rotate-6 rounded-3xl bg-gradient-to-tr from-purple-500/10 to-blue-500/10" />
-                  <Image
-                    src={
-                      portfolio.avatar && isValidUrl(portfolio.avatar as string)
-                        ? portfolio.avatar
-                        : "/placeholder-avatar.svg"
-                    }
-                    alt={portfolio.name}
-                    width={400}
-                    height={400}
-                    className="relative z-10 size-52 rounded-2xl object-cover sm:size-64 lg:size-80"
-                    priority
-                  />
-                </div>
-              )}
+              <div className="relative mx-auto aspect-square max-w-xs sm:max-w-sm lg:max-w-md">
+                <div className="absolute inset-0 -rotate-6 rounded-3xl bg-gradient-to-tr from-purple-500/10 to-blue-500/10" />
+                <Image
+                  src={
+                    portfolio.avatar &&
+                    isValidImageUrl(portfolio.avatar as string)
+                      ? portfolio.avatar
+                      : "/placeholder-avatar.svg"
+                  }
+                  alt={`${portfolio.name}'s avatar`}
+                  width={400}
+                  height={400}
+                  className="relative z-10 size-52 rounded-2xl object-cover sm:size-64 lg:size-80"
+                  priority={true}
+                />
+              </div>
             </div>
           </header>
 
@@ -138,13 +107,15 @@ export default async function UserPortfolio({
                     <div className="relative mb-4 aspect-video overflow-hidden rounded-lg">
                       <Image
                         src={
-                          project.image && isValidUrl(project.image as string)
+                          project.image &&
+                          isValidImageUrl(project.image as string)
                             ? project.image
                             : "/placeholder-project.png"
                         }
                         alt={project.title}
-                        fill
                         className="object-cover transition-transform group-hover:scale-105"
+                        priority={true}
+                        fill={true}
                       />
                     </div>
                     <h3 className="mb-2 text-xl font-medium">
@@ -298,12 +269,12 @@ export default async function UserPortfolio({
             </section>
           )}
 
-          {/* Contact Section */}
+          {/* Connect Section */}
           {portfolio.socialLinks && portfolio.socialLinks.length > 0 && (
-            <footer className="py-20" id="contact">
+            <footer className="py-20" id="connect">
               <h2 className="mb-12 flex items-center text-2xl font-semibold">
-                <a href="#contacts">
-                  <span className="mr-2 text-purple-500">#</span> Contacts
+                <a href="#connect">
+                  <span className="mr-2 text-purple-500">#</span> Connect
                 </a>
               </h2>
               <div className="flex flex-wrap gap-4">
