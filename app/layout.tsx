@@ -2,10 +2,14 @@ import "./globals.css"
 import { getUsername } from "@/lib/session"
 import { Geist_Mono } from "next/font/google"
 import { FileSystemProvider } from "@/contexts/FileSystemContext"
+import { Metadata } from "next"
 
 const geistMono = Geist_Mono({ subsets: ["latin"] })
 
-export const metadata = {
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.METADATA_BASE_URL ?? "http://localhost:3000",
+  ),
   title: {
     default: "SN Terminal",
     template: "%s | SN Terminal",
