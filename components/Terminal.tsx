@@ -14,6 +14,69 @@ export type TerminalProps = {
   onClose: () => void
 }
 
+type TerminalInputProps = {
+  name: string
+  inputRef: React.RefObject<HTMLInputElement | null>
+  value: string
+  caretIndex: number
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  onCaretUpdate: () => void
+  onSubmit: (e: React.FormEvent) => void
+}
+
+const TerminalInput: React.FC<TerminalInputProps> = ({
+  name,
+  inputRef,
+  value,
+  caretIndex,
+  onChange,
+  onKeyDown,
+  onCaretUpdate,
+  onSubmit,
+}) => {
+  const [isFocused, setIsFocused] = useState(false)
+  const before = value.slice(0, caretIndex)
+  const activeChar = value[caretIndex]
+  const after = value.slice(caretIndex + 1)
+
+  return (
+    <form onSubmit={onSubmit} className="flex-grow">
+      <div className="relative w-full">
+        <span className="whitespace-pre">
+          {before}
+          <span
+            className={cn(
+              isFocused
+                ? "bg-zinc-100 text-zinc-900"
+                : "outline outline-1 outline-zinc-300",
+            )}
+          >
+            {activeChar ?? " "}
+          </span>
+          {after}
+        </span>
+        <input
+          ref={inputRef}
+          name={name}
+          value={value}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          onClick={onCaretUpdate}
+          onKeyUp={onCaretUpdate}
+          onSelect={onCaretUpdate}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className="absolute inset-0 w-full cursor-text bg-transparent p-0 opacity-0"
+          spellCheck={false}
+          autoComplete="off"
+          autoFocus
+        />
+      </div>
+    </form>
+  )
+}
+
 const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   const [input, setInput] = useState("")
   const [output, setOutput] = useState<string[]>([
@@ -23,6 +86,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
   const [commandHistory, setCommandHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [isExecuting, setIsExecuting] = useState(false)
+  const [caretIndex, setCaretIndex] = useState(0)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const outputRef = useRef<HTMLDivElement>(null)
@@ -40,6 +104,15 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value)
+    updateCaretFromInput()
+  }
+
+  const updateCaretFromInput = () => {
+    const el = inputRef.current
+    if (!el) return
+    setCaretIndex(
+      Math.min(el.selectionStart ?? el.value.length, el.value.length),
+    )
   }
 
   const handleInputSubmit = async (e: React.FormEvent) => {
@@ -83,6 +156,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
       setInput("")
       setIsExecuting(false)
+      setCaretIndex(0)
     }
   }
 
@@ -101,6 +175,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
     }
 
     setInput("")
+    setCaretIndex(0)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -115,23 +190,29 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       e.preventDefault()
       if (!inputMode && historyIndex < commandHistory.length - 1) {
         setHistoryIndex(historyIndex + 1)
-        setInput(commandHistory[commandHistory.length - 1 - historyIndex - 1])
+        const nextCommand =
+          commandHistory[commandHistory.length - 1 - historyIndex - 1]
+        setInput(nextCommand)
+        setCaretIndex(nextCommand.length)
       }
     } else if (e.key === "ArrowDown") {
       e.preventDefault()
       if (!inputMode && historyIndex > -1) {
         setHistoryIndex(historyIndex - 1)
-        setInput(
+        const nextCommand =
           historyIndex === 0
             ? ""
-            : commandHistory[commandHistory.length - 1 - historyIndex + 1],
-        )
+            : commandHistory[commandHistory.length - 1 - historyIndex + 1]
+        setInput(nextCommand)
+        setCaretIndex(nextCommand.length)
       }
     } else if (e.key === "ArrowRight") {
       if (!inputMode) {
         const lastCommand = commandHistory[commandHistory.length - 1] || ""
         if (input.length < lastCommand.length) {
-          setInput(lastCommand.slice(0, input.length + 1))
+          const nextCommand = lastCommand.slice(0, input.length + 1)
+          setInput(nextCommand)
+          setCaretIndex(nextCommand.length)
         }
       }
     } else if (e.key === "Tab") {
@@ -182,6 +263,10 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       <div
         className="window-scrollbar h-full w-full overflow-y-auto p-4 text-sm text-zinc-100"
         ref={outputRef}
+        onMouseDown={(e) => {
+          e.preventDefault()
+          inputRef.current?.focus()
+        }}
       >
         {output.map((line, index) => (
           <div
@@ -201,36 +286,30 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
               {inputMode ? (
                 <>
                   <span>{inputMode.steps[inputMode.currentStep].prompt} </span>
-                  <form onSubmit={handleInputModeSubmit} className="flex-grow">
-                    <input
-                      ref={inputRef}
-                      name="input"
-                      value={input}
-                      onChange={handleInputChange}
-                      onKeyDown={handleKeyDown}
-                      className="w-full bg-transparent outline-none"
-                      spellCheck={false}
-                      autoComplete="off"
-                      autoFocus
-                    />
-                  </form>
+                  <TerminalInput
+                    name="input"
+                    inputRef={inputRef}
+                    value={input}
+                    caretIndex={caretIndex}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    onCaretUpdate={updateCaretFromInput}
+                    onSubmit={handleInputModeSubmit}
+                  />
                 </>
               ) : (
                 <>
                   <span>{`${currentUser ?? ""}@${currentDirectory} $ `}</span>
-                  <form onSubmit={handleInputSubmit} className="flex-grow">
-                    <input
-                      ref={inputRef}
-                      name="command"
-                      value={input}
-                      onChange={handleInputChange}
-                      onKeyDown={handleKeyDown}
-                      className="w-full bg-transparent outline-none"
-                      spellCheck={false}
-                      autoComplete="off"
-                      autoFocus
-                    />
-                  </form>
+                  <TerminalInput
+                    name="command"
+                    inputRef={inputRef}
+                    value={input}
+                    caretIndex={caretIndex}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    onCaretUpdate={updateCaretFromInput}
+                    onSubmit={handleInputSubmit}
+                  />
                 </>
               )}
             </div>
