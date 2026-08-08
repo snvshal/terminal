@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useRef, useCallback } from "react"
 import dynamic from "next/dynamic"
 import Desktop from "../components/Desktop"
 import { initialWindowSize } from "@/components/Window"
@@ -12,6 +12,7 @@ const Notepad = dynamic(() => import("../components/Notepad"), { ssr: false })
 
 type WindowProps = {
   id: string
+  zIndex: number
   component: React.ReactElement
 }
 
@@ -21,6 +22,8 @@ function HomeContent() {
     x: number
     y: number
   } | null>(null)
+
+  const zCounterRef = useRef(1)
 
   const { openNotepad, setOpenNotepad } = useFileSystem()
 
@@ -48,11 +51,28 @@ function HomeContent() {
     [setOpenNotepad],
   )
 
+  const focusWindow = useCallback((id: string) => {
+    const zIndex = zCounterRef.current++
+    setOpenWindows((prevWindows) =>
+      prevWindows.map((window) =>
+        window.id === id ? { ...window, zIndex } : window,
+      ),
+    )
+  }, [])
+
   const openTerminal = useCallback(() => {
-    if (windowCenter) {
-      setOpenWindows([
+    if (!windowCenter) return
+
+    const zIndex = zCounterRef.current++
+    setOpenWindows((prevWindows) => {
+      if (prevWindows.some((window) => window.id === "terminal")) {
+        return prevWindows
+      }
+      return [
+        ...prevWindows,
         {
           id: "terminal",
+          zIndex,
           component: (
             <Terminal
               initialPosition={windowCenter}
@@ -60,16 +80,23 @@ function HomeContent() {
             />
           ),
         },
-      ])
-    }
+      ]
+    })
   }, [windowCenter, closeWindow])
 
   const handleOpenNotepad = useCallback(() => {
-    if (windowCenter) {
-      setOpenWindows((prevWindows) => [
+    if (!windowCenter) return
+
+    const zIndex = zCounterRef.current++
+    setOpenWindows((prevWindows) => {
+      if (prevWindows.some((window) => window.id === "notepad")) {
+        return prevWindows
+      }
+      return [
         ...prevWindows,
         {
           id: "notepad",
+          zIndex,
           component: (
             <Notepad
               initialPosition={{
@@ -80,8 +107,8 @@ function HomeContent() {
             />
           ),
         },
-      ])
-    }
+      ]
+    })
   }, [windowCenter, closeWindow])
 
   useEffect(() => {
@@ -92,8 +119,15 @@ function HomeContent() {
 
   return (
     <Desktop>
-      {openWindows.map(({ id, component }) => (
-        <div key={id}>{component}</div>
+      {openWindows.map(({ id, component, zIndex }) => (
+        <div
+          key={id}
+          className="relative"
+          style={{ zIndex }}
+          onMouseDownCapture={() => focusWindow(id)}
+        >
+          {component}
+        </div>
       ))}
       {!openWindows.length && (
         <div className="flex h-screen w-full items-center justify-center text-muted-foreground">
