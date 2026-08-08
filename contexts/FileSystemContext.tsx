@@ -64,7 +64,7 @@ export const FileSystemProvider: React.FC<{
       setCurrentUser(username as string)
       setCurrentDirectory(`/${username}`)
     }
-  }, [username])
+  }, [username, currentUser])
 
   const executeCommand = async (command: string): Promise<string[]> => {
     const [cmd, ...args] = command

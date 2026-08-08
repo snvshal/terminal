@@ -15,6 +15,7 @@ import {
   loadPortfolio as loadPortfolioAction,
 } from "@/app/actions"
 import { useFileSystem } from "./FileSystemContext"
+import { ZodError } from "zod"
 import {
   SkillSchema,
   ProjectSchema,
@@ -64,8 +65,7 @@ export const PortfolioProvider: React.FC<{
 }> = ({ children }) => {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
   const [inputMode, setInputMode] = useState<InputMode | null>(null)
-  const { currentUser, currentDirectory, setCurrentDirectory, setLoading } =
-    useFileSystem()
+  const { currentUser, setCurrentDirectory, setLoading } = useFileSystem()
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -270,9 +270,9 @@ export const PortfolioProvider: React.FC<{
     }
   }
 
-  const formatZodError = (error: any): string => {
+  const formatZodError = (error: ZodError): string => {
     return error.issues
-      .map((issue: any) => `${issue.path.join(".")}: ${issue.message}`)
+      .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
       .join(", ")
   }
 
@@ -284,12 +284,12 @@ export const PortfolioProvider: React.FC<{
         success: true
         data: Skill | Project | Experience | SocialLink | Hobby | Education
       }
-    | { success: false; error: Error } => {
+    | { success: false; error: ZodError } => {
     switch (type) {
       case "skill":
         return SkillSchema.safeParse(data) as
           | { success: true; data: Skill }
-          | { success: false; error: Error }
+          | { success: false; error: ZodError }
       case "project":
         const projectData = {
           ...data,
@@ -299,7 +299,7 @@ export const PortfolioProvider: React.FC<{
         }
         return ProjectSchema.safeParse(projectData) as
           | { success: true; data: Project }
-          | { success: false; error: Error }
+          | { success: false; error: ZodError }
       case "experience":
         return ExperienceSchema.safeParse({
           ...data,
@@ -308,15 +308,15 @@ export const PortfolioProvider: React.FC<{
             data.endDate === "present" ? undefined : new Date(data.endDate),
         }) as
           | { success: true; data: Experience }
-          | { success: false; error: Error }
+          | { success: false; error: ZodError }
       case "social":
         return SocialLinkSchema.safeParse(data) as
           | { success: true; data: SocialLink }
-          | { success: false; error: Error }
+          | { success: false; error: ZodError }
       case "hobby":
         return HobbySchema.safeParse(data) as
           | { success: true; data: Hobby }
-          | { success: false; error: Error }
+          | { success: false; error: ZodError }
       case "education":
         return EducationSchema.safeParse({
           ...data,
@@ -325,9 +325,14 @@ export const PortfolioProvider: React.FC<{
             data.endDate === "present" ? undefined : new Date(data.endDate),
         }) as
           | { success: true; data: Education }
-          | { success: false; error: Error }
+          | { success: false; error: ZodError }
       default:
-        return { success: false, error: new Error("Unknown item type") }
+        return {
+          success: false,
+          error: new ZodError([
+            { code: "custom", message: "Unknown item type", path: [] },
+          ]),
+        }
     }
   }
 
