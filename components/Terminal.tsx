@@ -94,6 +94,8 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
     useFileSystem()
   const { executePortfolioCommand, inputMode, handleInputStep } = usePortfolio()
 
+  const displayUser = currentUser ?? "guest"
+
   const router = useRouter()
 
   useEffect(() => {
@@ -122,7 +124,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       setIsExecuting(true)
       setOutput((prev) => [
         ...prev,
-        `${currentUser ?? ""}@${currentDirectory} $ ${input}`,
+        `${displayUser}@${currentDirectory} $ ${input}`,
       ])
       setCommandHistory([...commandHistory, input])
       setHistoryIndex(-1)
@@ -256,7 +258,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
   return (
     <Window
-      title={currentUser ?? "Terminal"}
+      title={displayUser}
       onClose={onClose}
       initialPosition={initialPosition}
     >
@@ -299,7 +301,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
                 </>
               ) : (
                 <>
-                  <span>{`${currentUser ?? ""}@${currentDirectory} $ `}</span>
+                  <span>{`${displayUser}@${currentDirectory} $ `}</span>
                   <TerminalInput
                     name="command"
                     inputRef={inputRef}
