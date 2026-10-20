@@ -35,3 +35,17 @@
 .window-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #eae8ed;
 }
+.window-frame {
+  box-sizing: border-box;
+}
+
+@media (max-width: 767px) {
+  .window-frame {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+}

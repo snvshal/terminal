@@ -238,7 +238,7 @@ const Window: React.FC<WindowProps> = ({
 
       <div
         ref={windowRef}
-        className={`absolute overflow-hidden border border-zinc-700 bg-zinc-900 ${
+        className={`window-frame absolute overflow-hidden border border-zinc-700 bg-zinc-900 ${
           isSmallScreen ? "fixed inset-0" : "rounded-xl shadow-lg"
         }`}
         style={{
