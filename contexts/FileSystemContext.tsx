@@ -63,6 +63,9 @@ export const FileSystemProvider: React.FC<{
     if (username && !currentUser) {
       setCurrentUser(username as string)
       setCurrentDirectory(`/${username}`)
+    } else if (!username && currentUser) {
+      setCurrentUser(null)
+      setCurrentDirectory("/")
     }
   }, [username, currentUser])
 

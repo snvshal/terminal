@@ -14,6 +14,7 @@ import {
 } from "@/types/schema"
 import { PortfolioSchema, UserProfileSchema } from "@/lib/zod"
 import { createSession, deleteSession, getUsername } from "@/lib/session"
+import { revalidatePath } from "next/cache"
 
 export const signUp = async (
   username: string,
@@ -59,6 +60,7 @@ export const signUp = async (
     })
 
     await createSession(username)
+    revalidatePath("/", "layout")
 
     return { success: true, message: ["Your account has been created"] }
   } catch (error) {
@@ -95,6 +97,7 @@ export const signIn = async (
     }
 
     await createSession(username)
+    revalidatePath("/", "layout")
 
     return { success: true, message: user.username }
   } catch (error) {
@@ -112,6 +115,7 @@ export const signOut = async (): Promise<{
 }> => {
   try {
     await deleteSession()
+    revalidatePath("/", "layout")
     return { success: true, message: "You have been signed out!" }
   } catch (error) {
     console.error("Error during sign out:", error)
