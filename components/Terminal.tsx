@@ -90,8 +90,13 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
 
   const inputRef = useRef<HTMLInputElement>(null)
   const outputRef = useRef<HTMLDivElement>(null)
-  const { currentDirectory, executeCommand, currentUser, loading } =
-    useFileSystem()
+  const {
+    currentDirectory,
+    displayDirectory,
+    executeCommand,
+    currentUser,
+    loading,
+  } = useFileSystem()
   const { executePortfolioCommand, inputMode, handleInputStep } = usePortfolio()
 
   const displayUser = currentUser ?? "guest"
@@ -124,7 +129,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
       setIsExecuting(true)
       setOutput((prev) => [
         ...prev,
-        `${displayUser}@${currentDirectory} $ ${input}`,
+        `${displayUser}@${displayDirectory} $ ${input}`,
       ])
       setCommandHistory([...commandHistory, input])
       setHistoryIndex(-1)
@@ -301,7 +306,7 @@ const Terminal: React.FC<TerminalProps> = ({ initialPosition, onClose }) => {
                 </>
               ) : (
                 <>
-                  <span>{`${displayUser}@${currentDirectory} $ `}</span>
+                  <span>{`${displayUser}@${displayDirectory} $ `}</span>
                   <TerminalInput
                     name="command"
                     inputRef={inputRef}

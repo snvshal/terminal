@@ -20,6 +20,7 @@ import {
 export type FileSystemContextType = {
   currentDirectory: string
   setCurrentDirectory: React.Dispatch<React.SetStateAction<string>>
+  displayDirectory: string
   executeCommand: (command: string) => Promise<string[]>
   getFullPath: (filename: string) => string
   currentUser: string | null
@@ -68,6 +69,13 @@ export const FileSystemProvider: React.FC<{
       setCurrentDirectory("/")
     }
   }, [username, currentUser])
+
+  const displayDirectory =
+    currentUser &&
+    (currentDirectory === `/${currentUser}` ||
+      currentDirectory.startsWith(`/${currentUser}/`))
+      ? `/root${currentDirectory.slice(currentUser.length + 1)}`
+      : currentDirectory
 
   const executeCommand = async (command: string): Promise<string[]> => {
     const [cmd, ...args] = command
@@ -278,7 +286,7 @@ export const FileSystemProvider: React.FC<{
   }
 
   const printWorkingDirectory = (): string => {
-    return currentDirectory
+    return displayDirectory
   }
 
   const moveFileOrDirectory = async (
@@ -495,6 +503,7 @@ export const FileSystemProvider: React.FC<{
       value={{
         currentDirectory,
         setCurrentDirectory,
+        displayDirectory,
         executeCommand,
         getFullPath,
         currentUser,
